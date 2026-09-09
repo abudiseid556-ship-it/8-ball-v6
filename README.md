@@ -1,29 +1,14 @@
-# 8-Ball Lottery V6
+# Premium Lottery V7
 
-የ100 ቁጥር እጣ ስርዓት፦
-- 1–100
-- አንድ ቁጥር = 100 ETB
-- 1ኛ = 7,000 ETB
-- 2ኛ = 1,000 ETB
-- 3ኛ = 500 ETB
-- አዘጋጅ = 1,500 ETB
+- User app: `/`
+- Admin app: `/admin`
+- Same backend + Supabase/PostgreSQL
+- Admin creates any number of rounds, ticket count and ticket price.
+- No manual start/end time entry. Start and close timestamps are recorded automatically when buttons are pressed.
+- Prize amounts are configurable per round.
+- Ticket numbers are not fixed at 100; up to 1,000,000.
+- User app hides taken numbers from the available selector and refreshes every 4 seconds.
+- Alerts appear at 20 and 10 remaining tickets.
+- Admin can view user names and phone numbers.
 
-V6 ዋና ማሻሻያ:
-- DATABASE_URL ከመጠቀም በፊት PostgreSQL URI መሆኑን ይፈትሻል።
-- በ`base` ያለ የተሳሳተ hostname ካለ በRender Logs ላይ ግልጽ CONFIG_ERROR ያሳያል።
-- `/api/health` የdatabase connection ሁኔታን ይፈትሻል።
-- Concurrent ticket reservation በPostgreSQL primary key/ON CONFLICT ይጠበቃል።
-- Draw በPostgreSQL advisory lock ይጠበቃል።
-
-Render:
-Build Command: npm install
-Start Command: npm start
-
-Environment:
-DATABASE_URL = Supabase Session Pooler URI
-JWT_SECRET = የግል ረጅም secret
-ADMIN_PIN = የግል PIN
-DATABASE_SSL = true
-
-ማስታወሻ:
-`DATABASE_URL` ውስጥ የSupabase የተሰጠውን ሙሉ URI ብቻ ይጠቀሙ።
+IMPORTANT: The current V6 database schema is not compatible with multiple rounds. Back up production data before migrating. For a clean/test database, run schema.sql. If the current database already contains important tickets, ask for a migration script rather than dropping tables.
