@@ -1,0 +1,28 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY,
+  name VARCHAR(80) NOT NULL,
+  phone VARCHAR(10) NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS tickets (
+  number INTEGER PRIMARY KEY CHECK (number BETWEEN 1 AND 100),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  status VARCHAR(10) NOT NULL CHECK (status IN ('pending','paid')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  paid_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS tickets_user_idx ON tickets(user_id);
+CREATE INDEX IF NOT EXISTS tickets_status_idx ON tickets(status);
+
+CREATE TABLE IF NOT EXISTS winners (
+  place INTEGER PRIMARY KEY CHECK (place BETWEEN 1 AND 3),
+  place_label VARCHAR(40) NOT NULL,
+  number INTEGER NOT NULL UNIQUE REFERENCES tickets(number) ON DELETE RESTRICT,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  prize INTEGER NOT NULL CHECK (prize >= 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS winners_user_idx ON winners(user_id);
