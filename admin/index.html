@@ -3,290 +3,112 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-
 <title>👑 8 BALL - አድሚን ፓነል</title>
-
 <style>
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-  -webkit-tap-highlight-color:transparent;
-}
-
-:root{
-  --blue:#075ddd;
-  --blue2:#13a8ff;
-  --dark:#06184b;
-  --gold:#f4bd20;
-  --bg:#f3f7fd;
-  --text:#102650;
-  --muted:#8190aa;
-  --white:#fff;
-  --danger:#ff3b30;
-  --success:#34c759;
-}
-
-body{
-  margin:0;
-  background:#dfeaff;
-  font-family: Arial, "Noto Sans Ethiopic", "Abyssinica SIL", sans-serif;
-  color:var(--text);
-}
-
-button{
-  font-family:inherit;
-  cursor:pointer;
-}
-
-.app{
-  width:100%;
-  max-width:480px;
-  min-height:100vh;
-  margin:auto;
-  background:var(--bg);
-  position:relative;
-  padding-bottom:50px;
-}
-
-/* TOPBAR */
-.topbar{
-  height:78px;
-  padding:13px 16px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  background:linear-gradient(135deg, #06194d 0%, #0757d5 55%, #13a8ff 100%);
-  color:var(--white);
-  border-bottom-left-radius:26px;
-  border-bottom-right-radius:26px;
-  box-shadow:0 8px 25px rgba(7,87,213,0.3);
-}
-
-.brand-text h1{
-  font-size:18px;
-  font-weight:900;
-  color:#fff;
-}
-.brand-text h1 span{
-  color:var(--gold);
-}
-.brand-text p{
-  font-size:10px;
-  opacity:0.9;
-}
-
-.content{
-  padding:14px;
-}
-
-/* CARDS */
-.card{
-  background:var(--white);
-  border-radius:20px;
-  padding:16px;
-  margin-bottom:14px;
-  box-shadow:0 6px 20px rgba(16,38,80,0.06);
-  border:1px solid rgba(7,87,213,0.06);
-}
-
-.card-title{
-  font-size:14px;
-  font-weight:800;
-  color:var(--text);
-  margin-bottom:12px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-
-.form-group{
-  margin-bottom:12px;
-}
-
-.form-group label{
-  display:block;
-  font-size:11px;
-  font-weight:700;
-  color:var(--muted);
-  margin-bottom:5px;
-}
-
-.form-control{
-  width:100%;
-  padding:10px 14px;
-  border-radius:12px;
-  border:1px solid #cbd5e1;
-  background:#f8fafc;
-  font-size:13px;
-  color:var(--text);
-  outline:none;
-}
-.form-control:focus{
-  border-color:var(--blue);
-  background:#fff;
-}
-
-/* BUTTONS ROW */
-.action-row{
-  display:flex;
-  gap:8px;
-  margin-top:14px;
-}
-
-.btn{
-  flex:1;
-  padding:12px;
-  border-radius:14px;
-  border:none;
-  font-size:13px;
-  font-weight:bold;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.08);
-}
-
-.btn-primary{ background:linear-gradient(135deg,var(--blue),var(--blue2)); color:#fff; }
-.btn-success{ background:linear-gradient(135deg,#34c759,#0a8024); color:#fff; }
-.btn-danger{ background:linear-gradient(135deg,#ff3b30,#c00); color:#fff; }
-
-/* ROUND LIST ITEM */
-.round-item{
-  background:#f8fafc;
-  border-radius:14px;
-  padding:12px;
-  margin-bottom:10px;
-  border:1px solid #e2e8f0;
-  font-size:12px;
-}
-.round-item p{
-  margin-bottom:4px;
-}
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--blue:#075ddd;--blue2:#13a8ff;--dark:#06184b;--gold:#f4bd20;--bg:#f3f7fd;--text:#102650;--muted:#8190aa;--white:#fff;--danger:#ff3b30;--success:#34c759;}
+body{margin:0;background:#dfeaff;font-family:Arial, "Noto Sans Ethiopic", sans-serif;color:var(--text);}
+.app{width:100%;max-width:480px;min-height:100vh;margin:auto;background:var(--bg);padding-bottom:50px;}
+.topbar{height:78px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg, #06194d 0%, #0757d5 55%, #13a8ff 100%);color:var(--white);}
+.content{padding:14px;}
+.card{background:var(--white);border-radius:20px;padding:16px;margin-bottom:14px;box-shadow:0 6px 20px rgba(16,38,80,0.06);}
+.card-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:12px;}
+.form-group{margin-bottom:12px;}
+.form-group label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;}
+.form-control{width:100%;padding:10px 14px;border-radius:12px;border:1px solid #cbd5e1;background:#f8fafc;font-size:13px;outline:none;}
+.btn{width:100%;padding:12px;border-radius:14px;border:none;font-size:13px;font-weight:bold;cursor:pointer;color:#fff;margin-top:5px;}
+.btn-primary{background:linear-gradient(135deg,var(--blue),var(--blue2));}
+.btn-success{background:linear-gradient(135deg,#34c759,#0a8024);}
+.btn-danger{background:linear-gradient(135deg,#ff3b30,#c00);}
+.round-item{background:#f8fafc;border-radius:14px;padding:12px;margin-bottom:10px;border:1px solid #e2e8f0;font-size:12px;}
 </style>
 </head>
 <body>
-
 <div class="app">
-
-  <!-- TOP BAR -->
   <header class="topbar">
-    <div class="brand-text">
+    <div>
       <h1>8 BALL <span>አድሚን</span></h1>
-      <p>የዙር እና እጣ አስተዳደር መቆጣጠሪያ</p>
+      <p style="font-size:10px;">የአስተዳደር መቆጣጠሪያ</p>
     </div>
-    <button class="btn btn-danger" style="padding:6px 12px; font-size:11px; flex:unset;" onclick="adminLogout()">ውጣ</button>
+    <button class="btn btn-danger" style="width:auto;padding:6px 12px;" onclick="localStorage.removeItem('adminToken');location.reload();">ውጣ</button>
   </header>
-
   <div class="content">
-
-    <!-- CREATE ROUND -->
     <div class="card">
       <div class="card-title">➕ አዲስ ዙር መፍጠር</div>
-      <div class="form-group">
-        <label>የዙር ቁጥር (Round No)</label>
-        <input type="number" id="roundNo" class="form-control" value="1">
-      </div>
-      <div class="form-group">
-        <label>የቲኬት ዋጋ (ETB)</label>
-        <input type="number" id="ticketPrice" class="form-control" value="200">
-      </div>
-      <div class="form-group">
-        <label>የቲኬት ብዛት (Max Numbers)</label>
-        <input type="number" id="maxNumbers" class="form-control" value="50">
-      </div>
+      <div class="form-group"><label>የዙር ቁጥር</label><input type="number" id="roundNo" class="form-control" value="1"></div>
+      <div class="form-group"><label>የቲኬት ዋጋ (ETB)</label><input type="number" id="ticketPrice" class="form-control" value="200"></div>
+      <div class="form-group"><label>የቲኬት ብዛት</label><input type="number" id="maxNumbers" class="form-control" value="25"></div>
       <button class="btn btn-primary" onclick="createRound()">አዲስ ዙር ይፍጠሩ</button>
     </div>
 
-    <!-- CONTROL ACTIVE ROUND -->
     <div class="card">
       <div class="card-title">⚙️ የንቁ ዙር መቆጣጠሪያ</div>
-      <div class="form-group">
-        <label>የአሁኑ ዙር መለያ (Active Round ID)</label>
-        <input type="text" id="activeRoundId" class="form-control" readonly placeholder="ምንም ንቁ ዙር የለም">
-      </div>
-      <div class="action-row">
-        <button class="btn btn-success" onclick="startRound()">▶️ ጀርጀም</button>
+      <div class="form-group"><label>ንቁ ዙር መለያ (ID)</label><input type="text" id="activeRoundId" class="form-control" readonly placeholder="ምንም ንቁ ዙር የለም"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-success" onclick="startRound()">▶️ ጀምር</button>
         <button class="btn btn-danger" onclick="closeRound()">⏹️ ዝጋ</button>
       </div>
     </div>
 
-    <!-- SPECIAL NOTICE SETTING -->
     <div class="card">
-      <div class="card-title">📢 የልዩ እጣ ቅድመ ማሳወቂያ ማስተካከያ</div>
-      <div class="form-group">
-        <label>የማሳወቂያ መልዕክት (Announcement Text)</label>
-        <textarea id="noticeMessage" class="form-control" rows="3">ከፍ ያለ ሽልማት የሚታወጅበት ልዩ እጣ ሊጀመር ነው። የዕድሉ ተሳታፊ ለመሆን ዛሬውኑ ይዘጋጁ!</textarea>
-      </div>
+      <div class="card-title">🏆 አሸናፊዎች ምዝገባ</div>
+      <div class="form-group"><label>1ኛ አሸናፊ (ስም/ስልክ/ቁጥር)</label><input type="text" id="w1" class="form-control"></div>
+      <div class="form-group"><label>2ኛ አሸናፊ</label><input type="text" id="w2" class="form-control"></div>
+      <div class="form-group"><label>3ኛ አሸናፊ</label><input type="text" id="w3" class="form-control"></div>
+      <button class="btn btn-success" onclick="saveWinners()">አሸናፊዎችን መዝግብ</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📢 የልዩ እጣ ማሳወቂያ</div>
+      <div class="form-group"><textarea id="noticeMessage" class="form-control" rows="3"></textarea></div>
       <button class="btn btn-primary" onclick="updateNotice()">ማሳወቂያውን አድስ</button>
     </div>
 
-    <!-- ROUNDS HISTORY -->
     <div class="card">
       <div class="card-title">📋 የዙሮች ዝርዝር</div>
-      <div id="roundsList">
-        <p style="color:var(--muted); font-size:12px;">መረጃ በመጫን ላይ...</p>
-      </div>
+      <div id="roundsList"><p style="color:var(--muted); font-size:12px;">መረጃ በመጫን ላይ...</p></div>
     </div>
-
   </div>
-
 </div>
-
 <script>
   let adminToken = localStorage.getItem('adminToken') || '';
-
-  // ቶኬን ከሌለ መጠየቅ
   if (!adminToken) {
-    const pwd = prompt('እባክዎ የአድሚን መለዮ (Password) ያስገቡ:');
-    if (pwd) {
-      loginAdmin(pwd);
-    }
+    const pwd = prompt('እባክዎ የአድሚን የይለፍ ቃል ያስገቡ (ለምሳሌ: admin123):');
+    if (pwd) loginAdmin(pwd);
   }
 
   async function loginAdmin(password) {
-    try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
-      });
-      const data = await res.json();
-      if (data.token) {
-        localStorage.setItem('adminToken', data.token);
-        adminToken = data.token;
-        loadAdminData();
-      } else {
-        alert('የተሳሳተ የይለፍ ቃል!');
-      }
-    } catch (e) {
-      alert('ሰቨር ማግኘት አልተቻለም');
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+    const data = await res.json();
+    if (data.token) {
+      localStorage.setItem('adminToken', data.token);
+      adminToken = data.token;
+      loadAdminData();
+    } else {
+      alert('የተሳሳተ የይለፍ ቃል!');
+      location.reload();
     }
   }
 
   async function loadAdminData() {
-    try {
-      const res = await fetch('/api/admin/rounds', {
-        headers: { 'Authorization': `Bearer ${adminToken}` }
+    const res = await fetch('/api/admin/rounds', { headers: { 'Authorization': `Bearer ${adminToken}` } });
+    const data = await res.json();
+    if (data.rounds) {
+      const listDiv = document.getElementById('roundsList');
+      listDiv.innerHTML = '';
+      data.rounds.forEach(r => {
+        if (r.status === 'active') document.getElementById('activeRoundId').value = r.id;
+        const item = document.createElement('div');
+        item.className = 'round-item';
+        item.innerHTML = `<p><strong>ዙር #${r.round_no}</strong> (${r.id})</p>
+                          <p>ሁኔታ: <strong>${r.status}</strong> | ዋጋ: ${r.ticket_price} ETB</p>
+                          <p>1ኛ: ${r.first_winner || 'ሳይመደብ'} | 2ኛ: ${r.second_winner || 'ሳይመደብ'}</p>`;
+        listDiv.appendChild(item);
       });
-      const data = await res.json();
-      if (data.rounds) {
-        const listDiv = document.getElementById('roundsList');
-        listDiv.innerHTML = '';
-        data.rounds.forEach(r => {
-          if (r.status === 'active') {
-            document.getElementById('activeRoundId').value = r.id;
-          }
-          const item = document.createElement('div');
-          item.className = 'round-item';
-          item.innerHTML = `<p><strong>ዙር #${r.round_no}</strong> (መለያ: ${r.id})</p>
-                            <p>ሁኔታ: <strong>${r.status}</strong> | ዋጋ: ${r.ticket_price} ETB</p>`;
-          listDiv.appendChild(item);
-        });
-      }
-    } catch (e) {
-      console.error(e);
     }
   }
 
@@ -294,105 +116,54 @@ button{
     const round_no = document.getElementById('roundNo').value;
     const ticket_price = document.getElementById('ticketPrice').value;
     const max_numbers = document.getElementById('maxNumbers').value;
-
-    try {
-      const res = await fetch('/api/admin/rounds', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminToken}`
-        },
-        body: JSON.stringify({ round_no, ticket_price, max_numbers })
-      });
-      const data = await res.json();
-      if (data.ok) {
-        alert('አዲስ ዙር በስኬት ተፈጥሯል!');
-        loadAdminData();
-      } else {
-        alert(data.error || 'ዙር መፍጠር አልተቻለም');
-      }
-    } catch (e) {
-      alert('ስህተት ተፈጥሯል');
-    }
+    const res = await fetch('/api/admin/rounds', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
+      body: JSON.stringify({ round_no, ticket_price, max_numbers })
+    });
+    const data = await res.json();
+    if (data.ok) { alert('ተፈጥሯል!'); loadAdminData(); }
   }
 
   async function startRound() {
-    const roundId = document.getElementById('activeRoundId').value;
-    if (!roundId) {
-      alert('የሚጀመር ዙር መለያ የለም!');
-      return;
-    }
-    try {
-      const res = await fetch(`/api/admin/rounds/start/${roundId}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${adminToken}` }
-      });
-      const data = await res.json();
-      if (data.ok) {
-        alert('ዙሩ በስኬት ተጀምሯል!');
-        loadAdminData();
-      } else {
-        alert(data.error || 'ዙር መጀመር አልተቻለም::');
-      }
-    } catch (e) {
-      alert('ስህተት ተፈጥሯል');
-    }
+    const id = document.getElementById('activeRoundId').value;
+    if (!id) return alert('መለያ የለም');
+    const res = await fetch(`/api/admin/rounds/start/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${adminToken}` } });
+    if ((await res.json()).ok) { alert('ተጀምሯል!'); loadAdminData(); }
   }
 
   async function closeRound() {
+    const id = document.getElementById('activeRoundId').value;
+    if (!id) return alert('መለያ የለም');
+    const res = await fetch(`/api/admin/rounds/close/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${adminToken}` } });
+    if ((await res.json()).ok) { alert('ተዘግቷል!'); loadAdminData(); }
+  }
+
+  async function saveWinners() {
     const roundId = document.getElementById('activeRoundId').value;
-    if (!roundId) {
-      alert('የሚዘጋ ዙር መለያ የለም!');
-      return;
-    }
-    try {
-      const res = await fetch(`/api/admin/rounds/close/${roundId}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${adminToken}` }
-      });
-      const data = await res.json();
-      if (data.ok) {
-        alert('ዙሩ በስኬት ተዘግቷል!');
-        loadAdminData();
-      } else {
-        alert(data.error || 'መዝጋት አልተቻለም::');
-      }
-    } catch (e) {
-      alert('ስህተት ተፈጥሯል');
-    }
+    const firstWinner = document.getElementById('w1').value;
+    const secondWinner = document.getElementById('w2').value;
+    const thirdWinner = document.getElementById('w3').value;
+    if (!roundId) return alert('ንቁ ዙር የለም');
+    const res = await fetch('/api/admin/rounds/winners', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
+      body: JSON.stringify({ roundId, firstWinner, secondWinner, thirdWinner })
+    });
+    if ((await res.json()).ok) { alert('አሸናፊዎች ተመዝግበዋል!'); loadAdminData(); }
   }
 
   async function updateNotice() {
     const message = document.getElementById('noticeMessage').value;
-    try {
-      const res = await fetch('/api/admin/announcements/special', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminToken}`
-        },
-        body: JSON.stringify({ active: true, message })
-      });
-      const data = await res.json();
-      if (data.ok) {
-        alert('የልዩ እጣ ማሳወቂያው ተዘምኗል!');
-      } else {
-        alert('ማዘመን አልተቻለም');
-      }
-    } catch (e) {
-      alert('ስህተት ተፈጥሯል');
-    }
+    const res = await fetch('/api/admin/announcements/special', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
+      body: JSON.stringify({ active: true, message })
+    });
+    if ((await res.json()).ok) alert('ማሳወቂያው ተዘምኗል!');
   }
 
-  function adminLogout() {
-    localStorage.removeItem('adminToken');
-    location.reload();
-  }
-
-  if (adminToken) {
-    loadAdminData();
-  }
+  if (adminToken) loadAdminData();
 </script>
-
 </body>
 </html>
