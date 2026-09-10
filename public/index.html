@@ -177,6 +177,69 @@ button{
 }
 
 /* =========================================================
+   SPECIAL ANNOUNCEMENT / COMING SOON BANNER
+========================================================= */
+
+.announcement-card {
+  background: linear-gradient(135deg, #ff9500 0%, #ff3b30 100%);
+  border-radius: 20px;
+  padding: 16px;
+  color: var(--white);
+  margin-bottom: 14px;
+  box-shadow: 0 8px 25px rgba(255, 59, 48, 0.3);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.announcement-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+  backdrop-filter: blur(5px);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.announcement-content h3 {
+  font-size: 15px;
+  font-weight: 900;
+  margin-bottom: 3px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.announcement-content h3 span.badge-soon {
+  background: var(--white);
+  color: #ff3b30;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.announcement-content p {
+  font-size: 12px;
+  opacity: 0.95;
+  line-height: 1.4;
+}
+
+.announcement-content p strong {
+  color: var(--gold);
+  font-size: 13px;
+}
+
+/* =========================================================
    HERO BANNER
 ========================================================= */
 
@@ -453,7 +516,7 @@ button{
     <div class="brand">
       <div class="mini-ball"><span>8</span></div>
       <div class="brand-text">
-        <h1>8 BALL <span>እም</span></h1>
+        <h1>8 BALL <span>እጣ</span></h1>
         <p id="userInfo">ዕድልዎን ይሞክሩ!</p>
       </div>
     </div>
@@ -469,6 +532,15 @@ button{
   <!-- MAIN SCROLLABLE AREA -->
   <div class="content">
 
+    <!-- SPECIAL ANNOUNCEMENT PRE-NOTICE -->
+    <div class="announcement-card" id="specialNoticeCard">
+      <div class="announcement-icon">🎁</div>
+      <div class="announcement-content">
+        <h3>ልዩ እጣ በቅርብ ቀን! <span class="badge-soon">ቀድመው ይጠብቁ</span></h3>
+        <p id="noticeText">ከፍ ያለ ሽልማት የሚታወጅበት <strong>ልዩ እጣ</strong> ሊጀመር ነው። የዕድሉ ተሳታፊ ለመሆን ዛሬውኑ ይዘጋጁ!</p>
+      </div>
+    </div>
+
     <!-- HERO BANNER -->
     <div class="hero-banner">
       <div class="hero-decor"></div>
@@ -482,7 +554,7 @@ button{
 
       <div class="crown">👑</div>
       <div class="hero-pool"></div>
-      <h2>8 BALL <span>እም</span></h2>
+      <h2>8 BALL <span>እጣ</span></h2>
       <p>ዕድልዎን ይሞክሩ እና ታላቅ ሽልማት ያሸንፉ!</p>
     </div>
 
@@ -601,11 +673,10 @@ button{
   // የቲኬት ግዢ / ቁጥር የመያዝ ተግባር
   document.getElementById('takeTicketBtn').addEventListener('click', async () => {
     if (!selectedNumber || !currentRoundId) {
-      alert('እባክዎ መጀመሪያ ከሰንንጠን ጠረጴዛው ላይ ቁጥር ይምረጡ!');
+      alert('እባክዎ መጀመሪያ ከሰሌዳው ላይ ቁጥር ይምረጡ!');
       return;
     }
 
-    // ዩዘር ቶከን ካለ በlocalStorage መፈተሽ
     let token = localStorage.getItem('token') || '';
     if (!token) {
       const phone = prompt('ስልክ ቁጥርዎን ያስገቡ (10 ዲጂት):');
@@ -633,7 +704,6 @@ button{
       }
     }
 
-    // ቁጥሩን በሰቨር መያዝ (Take ticket)
     try {
       const res = await fetch('/api/take', {
         method: 'POST',
@@ -656,7 +726,6 @@ button{
     }
   });
 
-  // ገጹ ሲከፈት ዙሩን መጫን
   loadTodayRound();
 </script>
 
