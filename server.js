@@ -4,7 +4,7 @@ const PORT=Number(process.env.PORT||3000),DATABASE_URL=String(process.env.DATABA
 if(!DATABASE_URL||!JWT_SECRET||!ADMIN_PIN){console.error('CONFIG_ERROR: Missing DATABASE_URL, JWT_SECRET or ADMIN_PIN');process.exit(1)}
 const pool=new Pool({connectionString:DATABASE_URL,ssl:process.env.DATABASE_SSL==='false'?false:{rejectUnauthorized:false},max:Number(process.env.DB_POOL_MAX||10),idleTimeoutMillis:30000,connectionTimeoutMillis:10000});pool.on('error',e=>console.error('DB_POOL_ERROR:',e.message));
 const authLimiter=rateLimit({windowMs:15*60*1000,max:100,standardHeaders:true,legacyHeaders:false});const adminLimiter=rateLimit({windowMs:15*60*1000,max:60,standardHeaders:true,legacyHeaders:false});
-function bearer(req){const h=req.headers.authorization||'';return h.startsWith('Bearer ')?h.slice(7):''}function signUser(u){return jwt.sign({sub:u.id,role:'user'},JWT_SECRET,{expiresIn:'30d'})}function signAdmin(){return jwt.sign({role:'admin'},JWT_SECRET,{expiresIn:'12h'})}
+function bearer(req){const h=req.headers.authorization||'';return h.startsWith('Bearer ')?h.slice(7):''}function signUser(u){return jwt.sign({sub:u.id,role:'user'},JWT_SECRET,{expiresIn:'30d'})}function signAdmin(){return jwt.sign({role:'admin'},JWT_SECRET,{expiresIn:'30m'})}
 function requireUser(req,res,next){try{const p=jwt.verify(bearer(req),JWT_SECRET);if(p.role!=='user'||!p.sub)throw 0;req.auth=p;next()}catch{res.status(401).json({error:'የመግቢያ ፍቃድ አልተገኘም።'})}}
 function requireAdmin(req,res,next){try{const p=jwt.verify(bearer(req),JWT_SECRET);if(p.role!=='admin')throw 0;req.auth=p;next()}catch{res.status(401).json({error:'የአድሚን ፍቃድ አልተገኘም።'})}}
 function validPhone(x){return /^\d{10}$/.test(String(x||''))}function int(x){return Number.isInteger(Number(x))?Number(x):NaN}
