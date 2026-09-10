@@ -8,138 +8,328 @@
 
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,"Noto Sans Ethiopic",Arial,sans-serif;background:linear-gradient(180deg,#eaf5ff,#f7fbff);color:#17335f}
-.app{max-width:600px;margin:auto;min-height:100vh;padding-bottom:30px}
+body{
+ margin:0;
+ font-family:system-ui,"Noto Sans Ethiopic",Arial,sans-serif;
+ background:linear-gradient(180deg,#eaf5ff,#f8fbff);
+ color:#17335f
+}
+.app{max-width:620px;margin:auto;min-height:100vh;padding-bottom:30px}
 
 .header{
-padding:22px 18px;color:#fff;
-background:linear-gradient(135deg,#062e88,#0876e9 60%,#7327df);
-border-radius:0 0 30px 30px;
-box-shadow:0 12px 30px #0758d933
+ padding:20px 16px;
+ color:#fff;
+ background:linear-gradient(135deg,#062e88,#0876e9 60%,#7428df);
+ border-radius:0 0 30px 30px;
+ box-shadow:0 12px 30px #0758d933
 }
-.top{display:flex;justify-content:space-between;align-items:center}
-.logo{display:flex;align-items:center;gap:10px}
+.top{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:10px
+}
+.logo{
+ display:flex;
+ align-items:center;
+ gap:10px
+}
 .ball{
-width:55px;height:55px;border-radius:50%;
-background:radial-gradient(circle at 32% 24%,#666,#111 55%,#000);
-display:grid;place-items:center;
-box-shadow:inset 0 5px 10px #fff5,0 7px 15px #00194d88
+ width:55px;
+ height:55px;
+ border-radius:50%;
+ background:radial-gradient(circle at 32% 23%,#666,#111 55%,#000);
+ display:grid;
+ place-items:center;
+ box-shadow:inset 0 5px 10px #fff5,0 8px 16px #00194d88
 }
 .ball span{
-width:25px;height:25px;border-radius:50%;
-background:#fff;color:#111;display:grid;place-items:center;font-weight:1000
+ width:26px;
+ height:26px;
+ border-radius:50%;
+ background:#fff;
+ color:#111;
+ display:grid;
+ place-items:center;
+ font-weight:1000;
+ font-size:18px
 }
-h1{margin:0;font-size:24px}
-.sub{font-size:12px;opacity:.8;margin-top:3px}
-.logout{border:1px solid #ffffff55;background:#ffffff18;color:#fff;border-radius:15px;padding:9px 12px;font-weight:900}
-
-.hero{
-margin-top:18px;padding:18px;border-radius:24px;
-background:linear-gradient(135deg,#ffffff18,#ffffff08);
-border:1px solid #ffffff33
+.logo h1{
+ margin:0;
+ font-size:23px
 }
-.hero b{font-size:18px}
-.hero p{margin:5px 0 0;font-size:13px;opacity:.85}
+.logo small{
+ opacity:.8;
+ font-size:11px
+}
+.logout{
+ border:1px solid #ffffff55;
+ background:#ffffff18;
+ color:#fff;
+ border-radius:15px;
+ padding:9px 12px;
+ font-weight:900
+}
 
 .wrap{padding:14px}
-.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.card{
-background:#fff;border:1px solid #d9e8f7;border-radius:20px;
-padding:16px;box-shadow:0 10px 25px #164d8a12
+
+.cards{
+ display:grid;
+ grid-template-columns:repeat(2,1fr);
+ gap:10px
 }
-.stat b{font-size:27px;display:block;color:#075ed5}
-.stat small{color:#7182a0;font-weight:800}
+.card{
+ background:#fff;
+ border:1px solid #d9e8f7;
+ border-radius:21px;
+ padding:15px;
+ box-shadow:0 10px 25px #164d8a12
+}
+.stat b{
+ display:block;
+ font-size:27px;
+ color:#075ed5
+}
+.stat small{
+ color:#7182a0;
+ font-weight:800
+}
 
 .section{margin-top:14px}
-.title{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.title b{font-size:18px}
-.pill{background:#e8f3ff;color:#075ed5;border-radius:20px;padding:7px 11px;font-size:11px;font-weight:900}
-
-.btn{
-border:0;border-radius:14px;padding:12px 14px;
-font-weight:900;cursor:pointer
+.title{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:8px;
+ margin-bottom:10px
 }
-.primary{background:linear-gradient(90deg,#087cff,#7024ed);color:#fff}
-.green{background:#dcfce9;color:#087443}
-.red{background:#ffe3e3;color:#a10e0e}
-.gray{background:#eef5fc;color:#31557d}
+.title b{font-size:18px}
+
+.pill{
+ background:#e8f3ff;
+ color:#075ed5;
+ border-radius:20px;
+ padding:7px 11px;
+ font-size:11px;
+ font-weight:900
+}
+
+.field{margin:9px 0}
+.field label{
+ display:block;
+ font-size:12px;
+ font-weight:900;
+ color:#627591;
+ margin-bottom:5px
+}
+input,select{
+ width:100%;
+ padding:13px;
+ border:1px solid #d4e2f0;
+ border-radius:13px;
+ background:#fff;
+ font-size:15px;
+ outline:none
+}
+input:focus,select:focus{
+ border-color:#087cff;
+ box-shadow:0 0 0 3px #087cff18
+}
+
+.prizes{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:7px
+}
+.prize{text-align:center}
+.prize input{
+ text-align:center;
+ padding:10px 4px
+}
+
+.actions{
+ display:flex;
+ gap:7px;
+ flex-wrap:wrap;
+ margin-top:10px
+}
+.btn{
+ border:0;
+ border-radius:14px;
+ padding:12px 14px;
+ font-weight:900;
+ cursor:pointer
+}
+.primary{
+ background:linear-gradient(90deg,#087cff,#7024ed);
+ color:#fff
+}
+.green{
+ background:#dcfce9;
+ color:#087443
+}
+.red{
+ background:#ffe3e3;
+ color:#a10e0e
+}
+.gray{
+ background:#edf4fb;
+ color:#31557d
+}
+
+.round{
+ background:linear-gradient(135deg,#fff8d7,#fff)
+}
+.roundStatus{
+ font-weight:1000
+}
+.note{
+ padding:12px;
+ border-radius:14px;
+ background:#f3f7fc;
+ color:#647792;
+ font-size:12px;
+ line-height:1.7
+}
 
 .pending{
-display:flex;align-items:center;justify-content:space-between;
-gap:8px;padding:12px 0;border-bottom:1px solid #e6edf5
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:10px;
+ padding:12px 0;
+ border-bottom:1px solid #e5edf6
 }
 .pending:last-child{border-bottom:0}
 .pending strong{display:block}
-.pending small{color:#7182a0}
-.pendingBtns{display:flex;gap:5px}
-
-.round{
-background:linear-gradient(135deg,#fff8d7,#fff);
-border:1px solid #efd16a
+.pending small{
+ display:block;
+ color:#7182a0;
+ margin-top:3px
 }
-.field{margin:9px 0}
-.field label{display:block;font-size:12px;font-weight:900;margin-bottom:5px;color:#627591}
-.field input,.field select{
-width:100%;padding:13px;border:1px solid #d4e2f0;
-border-radius:13px;background:#fff;font-size:15px
+.pendingBtns{
+ display:flex;
+ gap:5px
 }
-.prizes{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.prize{text-align:center}
-.prize label{font-size:11px}
-.prize input{padding:10px 5px;text-align:center}
-
-.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
-.actions .btn{flex:1}
-
-.tableWrap{overflow:auto}
-table{width:100%;border-collapse:collapse;font-size:12px}
-th,td{padding:10px 7px;border-bottom:1px solid #e5edf6;text-align:left;white-space:nowrap}
-th{color:#7182a0;background:#f5f9fd}
-.statusPaid{color:#078247;font-weight:900}
-.statusPending{color:#d47a00;font-weight:900}
 
 .search{
-width:100%;padding:13px;border:1px solid #d5e4f3;
-border-radius:15px;margin-bottom:9px;font-size:15px
+ margin-bottom:9px
+}
+
+.tableWrap{
+ overflow:auto;
+ border-radius:12px
+}
+table{
+ width:100%;
+ border-collapse:collapse;
+ font-size:12px
+}
+th,td{
+ padding:10px 7px;
+ border-bottom:1px solid #e5edf6;
+ text-align:left;
+ white-space:nowrap
+}
+th{
+ color:#7182a0;
+ background:#f5f9fd
+}
+.paid{
+ color:#078247;
+ font-weight:1000
+}
+.pendingStatus{
+ color:#d47a00;
+ font-weight:1000
+}
+
+.roundItem{
+ padding:12px;
+ border:1px solid #dce9f5;
+ border-radius:15px;
+ margin-top:8px;
+ background:#f8fbff
+}
+.roundItem b{
+ display:block;
+ margin-bottom:4px
+}
+.roundBtns{
+ display:flex;
+ gap:6px;
+ margin-top:8px
 }
 
 .winner{
-display:flex;align-items:center;justify-content:space-between;
-padding:12px;border-radius:15px;background:#f3f8ff;margin-top:7px
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:8px;
+ padding:12px;
+ border-radius:15px;
+ background:#f3f8ff;
+ margin-top:7px
 }
-.winner:first-child{background:linear-gradient(90deg,#fff3b1,#fff)}
-.medal{font-size:25px}
-
-.note{
-padding:12px;border-radius:14px;background:#f3f7fc;
-color:#647792;font-size:12px;line-height:1.7
+.winner:first-child{
+ background:linear-gradient(90deg,#fff2ae,#fff)
 }
 
 .login{
-position:fixed;inset:0;background:#061b4499;
-display:flex;align-items:center;justify-content:center;
-padding:18px;z-index:100
+ position:fixed;
+ inset:0;
+ background:#061b4499;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ padding:18px;
+ z-index:100
 }
 .loginBox{
-width:min(430px,100%);background:#fff;border-radius:28px;
-padding:24px;box-shadow:0 25px 60px #001b4d55
+ width:min(430px,100%);
+ background:#fff;
+ border-radius:28px;
+ padding:24px;
+ box-shadow:0 25px 60px #001b4d55
 }
-.loginBall{font-size:55px;text-align:center}
-.loginBox h2{text-align:center;margin:5px 0}
-.loginBox p{text-align:center;color:#7182a0;font-size:12px}
+.loginBall{
+ text-align:center;
+ font-size:58px
+}
+.loginBox h2{
+ text-align:center;
+ margin:5px 0
+}
+.loginBox p{
+ text-align:center;
+ color:#7182a0;
+ font-size:12px
+}
 
 .toast{
-position:fixed;left:50%;bottom:25px;transform:translateX(-50%);
-background:#132b53;color:#fff;padding:12px 18px;border-radius:15px;
-display:none;z-index:200
+ position:fixed;
+ left:50%;
+ bottom:25px;
+ transform:translateX(-50%);
+ background:#132b53;
+ color:#fff;
+ padding:12px 18px;
+ border-radius:15px;
+ display:none;
+ z-index:200;
+ max-width:90%;
+ text-align:center
 }
 
 @media(max-width:390px){
-.cards{gap:7px}
-.card{padding:13px}
-.pending{align-items:flex-start;flex-direction:column}
-.pendingBtns{width:100%}
-.pendingBtns .btn{flex:1}
+ .cards{gap:7px}
+ .card{padding:13px}
+ .pending{
+  flex-direction:column;
+  align-items:flex-start
+ }
+ .pendingBtns{width:100%}
+ .pendingBtns .btn{flex:1}
 }
 </style>
 </head>
@@ -149,78 +339,158 @@ display:none;z-index:200
 <div class="app">
 
 <header class="header">
-<div class="top">
-<div class="logo">
-<div class="ball"><span>8</span></div>
-<div>
-<h1>🎱 8 BALL እጣ</h1>
-<div class="sub">🛡️ Admin Control Center</div>
-</div>
-</div>
-<button class="logout" onclick="logout()">🚪 ውጣ</button>
-</div>
+ <div class="top">
 
-<div class="hero">
-<b>የእጣ አስተዳደር</b>
-<p>ዙር፣ ትኬት፣ ክፍያ እና አሸናፊዎችን ከአንድ ቦታ ይቆጣጠሩ።</p>
-</div>
+  <div class="logo">
+   <div class="ball"><span>8</span></div>
+   <div>
+    <h1>🎱 8 BALL እጣ</h1>
+    <small>🛡️ ADMIN CONTROL CENTER</small>
+   </div>
+  </div>
+
+  <button class="logout" onclick="logout()">🚪 ውጣ</button>
+
+ </div>
 </header>
 
 <main class="wrap">
 
 <section class="cards">
-<div class="card stat"><b id="totalTickets">0</b><small>🎟️ የተያዙ</small></div>
-<div class="card stat"><b id="paidTickets">0</b><small>✅ የተከፈሉ</small></div>
-<div class="card stat"><b id="remaining">0</b><small>🟢 የቀሩ</small></div>
-<div class="card stat"><b id="revenue">0</b><small>💰 ገቢ ETB</small></div>
+
+ <div class="card stat">
+  <b id="totalTickets">0</b>
+  <small>🎟️ የተያዙ</small>
+ </div>
+
+ <div class="card stat">
+  <b id="paidTickets">0</b>
+  <small>✅ የተከፈሉ</small>
+ </div>
+
+ <div class="card stat">
+  <b id="remaining">0</b>
+  <small>🟢 የቀሩ</small>
+ </div>
+
+ <div class="card stat">
+  <b id="revenue">0</b>
+  <small>💰 ገቢ ETB</small>
+ </div>
+
 </section>
 
+
 <section class="section card round">
+
 <div class="title">
-<b>⚙️ የአሁኑ ዙር</b>
-<span class="pill" id="roundStatus">—</span>
+ <b>⚙️ የዙር አስተዳደር</b>
+ <span class="pill" id="roundStatus">—</span>
 </div>
 
 <div class="field">
-<label>የትኬት ዋጋ</label>
-<input id="ticketPrice" type="number" placeholder="100">
+ <label>📅 የእጣ ቀን</label>
+ <input id="drawDate" type="date">
 </div>
 
 <div class="field">
-<label>የትኬት ብዛት</label>
-<input id="maxNumbers" type="number" placeholder="1000">
+ <label>🔢 ዙር ቁጥር</label>
+ <input id="roundNo" type="number" min="1" value="1">
+</div>
+
+<div class="field">
+ <label>💵 የትኬት ዋጋ</label>
+ <input id="ticketPrice" type="number" min="1" value="100">
+</div>
+
+<div class="field">
+ <label>🎟️ የትኬት ብዛት</label>
+ <input id="maxNumbers" type="number" min="1" max="1000000" value="500">
 </div>
 
 <div class="prizes">
-<div class="field prize"><label>🥇 1ኛ</label><input id="p1" type="number"></div>
-<div class="field prize"><label>🥈 2ኛ</label><input id="p2" type="number"></div>
-<div class="field prize"><label>🥉 3ኛ</label><input id="p3" type="number"></div>
+
+ <div class="field prize">
+  <label>🥇 1ኛ</label>
+  <input id="p1" type="number" min="0" value="50000">
+ </div>
+
+ <div class="field prize">
+  <label>🥈 2ኛ</label>
+  <input id="p2" type="number" min="0" value="10000">
+ </div>
+
+ <div class="field prize">
+  <label>🥉 3ኛ</label>
+  <input id="p3" type="number" min="0" value="5000">
+ </div>
+
 </div>
 
 <div class="actions">
-<button class="btn primary" onclick="createRound()">➕ አዲስ ዙር</button>
-<button class="btn green" onclick="startRound()">▶️ ዙር ጀምር</button>
-<button class="btn red" onclick="closeRound()">⏹️ ዙር ዝጋ</button>
+
+ <button class="btn primary" onclick="createRound()">
+  ➕ አዲስ ዙር
+ </button>
+
+ <button class="btn green" onclick="startCurrent()">
+  ▶️ ጀምር
+ </button>
+
+ <button class="btn red" onclick="closeCurrent()">
+  ⏹️ ዝጋ
+ </button>
+
 </div>
 
-<div class="note" id="roundInfo" style="margin-top:10px">የዙሩ መረጃ እየተጫነ ነው…</div>
+<div class="note" id="roundInfo">
+ ዙር መረጃ እየተጫነ ነው…
+</div>
+
 </section>
 
+
 <section class="section card">
+
 <div class="title">
-<b>💳 የክፍያ ማረጋገጫ</b>
-<span class="pill" id="pendingCount">0</span>
+ <b>📋 የዙሮች ታሪክ</b>
+ <button class="btn gray" onclick="loadRounds()">↻</button>
 </div>
+
+<div id="roundList"></div>
+
+</section>
+
+
+<section class="section card">
+
+<div class="title">
+ <b>💳 የክፍያ ማረጋገጫ</b>
+ <span class="pill" id="pendingCount">0</span>
+</div>
+
 <div id="pendingList"></div>
+
 </section>
 
+
 <section class="section card">
+
 <div class="title">
-<b>🔎 ተጠቃሚዎች</b>
+ <b>🔎 ተጠቃሚዎች</b>
 </div>
-<input class="search" id="search" placeholder="ስም / ስልክ / ትኬት ፈልግ..." oninput="filterUsers()">
+
+<input
+ class="search"
+ id="search"
+ placeholder="ስም / ስልክ / ትኬት ፈልግ..."
+ oninput="filterUsers()"
+>
+
 <div class="tableWrap">
+
 <table>
+
 <thead>
 <tr>
 <th>ስም</th>
@@ -229,289 +499,977 @@ display:none;z-index:200
 <th>ክፍያ</th>
 </tr>
 </thead>
+
 <tbody id="usersBody"></tbody>
+
 </table>
+
 </div>
+
 </section>
 
+
 <section class="section card">
+
 <div class="title">
-<b>🏆 አሸናፊዎች</b>
-<button class="btn primary" onclick="drawWinners()">🎲 Draw</button>
+ <b>🏆 አሸናፊዎች</b>
+ <button class="btn primary" onclick="drawCurrent()">
+  🎲 እጣ አውጣ
+ </button>
 </div>
+
 <div id="winnerList"></div>
+
 </section>
 
+
 <section class="section card">
+
 <div class="title">
-<b>🔔 Notification Center</b>
-<span class="pill" id="noticeCount">0</span>
+ <b>🔔 Notification Center</b>
 </div>
-<div id="notifications" class="note">
-50% ሲሞላ፣ 20 ሲቀር፣ 10 ሲቀር፣ ሲሞላ እና አሸናፊ ሲወጣ ማስታወቂያ ይታያል።
+
+<div class="note">
+
+50% ሲሞላ፣ 20 ሲቀር፣ 10 ሲቀር፣
+ትኬቶች ሲሞሉ እና አሸናፊዎች ሲወጡ
+የማስታወቂያ ስርዓቱ እዚህ ይታያል።
+
 </div>
+
 </section>
 
 </main>
 </div>
 
+
 <div class="login" id="login">
+
 <div class="loginBox">
+
 <div class="loginBall">🎱</div>
+
 <h2>Admin Login</h2>
+
 <p>የአስተዳዳሪ PIN ያስገቡ</p>
+
 <div class="field">
-<input id="pin" type="password" inputmode="numeric" placeholder="Admin PIN">
+<input
+ id="pin"
+ type="password"
+ inputmode="numeric"
+ placeholder="Admin PIN"
+>
 </div>
-<button class="btn primary" style="width:100%" onclick="login()">🔐 ግባ</button>
+
+<button
+ class="btn primary"
+ style="width:100%"
+ onclick="login()"
+>
+🔐 ግባ
+</button>
+
 <p id="loginMsg"></p>
+
 </div>
+
 </div>
+
 
 <div class="toast" id="toast"></div>
 
+
 <script>
-let token=sessionStorage.getItem('lottery-admin-token')||'';
-let data={};
+
+let token=sessionStorage.getItem("lottery-admin-token")||"";
+let rounds=[];
+let current=null;
+let currentDetail=null;
 let users=[];
 
 const $=id=>document.getElementById(id);
 
+
+/* =========================
+   TOAST
+========================= */
+
 function toast(msg){
-$('toast').textContent=msg;
-$('toast').style.display='block';
-setTimeout(()=>$('toast').style.display='none',2500);
+
+ const t=$("toast");
+
+ t.textContent=msg;
+ t.style.display="block";
+
+ clearTimeout(window.toastTimer);
+
+ window.toastTimer=setTimeout(()=>{
+  t.style.display="none";
+ },2600);
+
 }
 
-async function login(){
-const pin=$('pin').value.trim();
-if(!pin)return $('loginMsg').textContent='PIN ያስገቡ።';
 
-try{
-const r=await fetch('/api/admin/login',{
-method:'POST',
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({pin})
-});
-const j=await r.json();
-
-if(!r.ok){
-$('loginMsg').textContent=j.error||'PIN ትክክል አይደለም።';
-return;
-}
-
-token=j.token;
-sessionStorage.setItem('lottery-admin-token',token);
-$('login').style.display='none';
-await load();
-}catch(e){
-$('loginMsg').textContent='Server ጋር መገናኘት አልቻለም።';
-}
-}
-
-function logout(){
-sessionStorage.removeItem('lottery-admin-token');
-token='';
-location.reload();
-}
+/* =========================
+   API
+========================= */
 
 async function api(url,options={}){
-options.headers={
-...(options.headers||{}),
-Authorization:'Bearer '+token,
-'Content-Type':'application/json'
-};
-const r=await fetch(url,options);
-const j=await r.json().catch(()=>({}));
-if(r.status===401){
-logout();
-throw new Error('session');
-}
-if(!r.ok)throw new Error(j.error||'Request failed');
-return j;
-}
 
-async function load(){
-try{
-const j=await api('/api/admin/state');
-data=j||{};
-render();
-}catch(e){
-if(e.message!=='session')toast('Admin data መጫን አልቻለም።');
-}
-}
+ options.headers={
+  ...(options.headers||{}),
+  "Authorization":"Bearer "+token,
+  "Content-Type":"application/json"
+ };
 
-function render(){
-const pending=data.pending||[];
-const taken=data.taken||{};
-const vals=Object.values(taken);
-const paid=vals.filter(x=>x.status==='paid').length;
+ const r=await fetch(url,options);
 
-$('totalTickets').textContent=vals.length;
-$('paidTickets').textContent=paid;
+ const j=await r.json().catch(()=>({}));
 
-let max=Number(data.max_numbers||data.maxNumbers||100);
-$('remaining').textContent=Math.max(0,max-vals.length);
-$('revenue').textContent=(paid*Number(data.ticket_price||data.ticketPrice||100)).toLocaleString();
+ if(r.status===401){
 
-$('pendingCount').textContent=pending.length;
+  sessionStorage.removeItem("lottery-admin-token");
+  token="";
+  $("login").style.display="flex";
 
-$('pendingList').innerHTML=pending.length?
-pending.map(x=>`
-<div class="pending">
-<div>
-<strong>🎟️ #${esc(x.number)}</strong>
-<small>${esc(x.userName||x.name||'')} • ${esc(x.phone||'')}</small>
-</div>
-<div class="pendingBtns">
-<button class="btn green" onclick="confirmPay(${Number(x.number)})">✓ Paid</button>
-<button class="btn red" onclick="releasePay(${Number(x.number)})">Release</button>
-</div>
-</div>`).join('')
-:'<div class="note">⏳ Pending ክፍያ የለም።</div>';
+  throw new Error("Admin session expired");
 
-$('roundStatus').textContent=data.round?.status||data.status||'—';
+ }
 
-if(data.round){
-$('ticketPrice').value=data.round.ticket_price||'';
-$('maxNumbers').value=data.round.max_numbers||'';
+ if(!r.ok){
 
-let prizes=data.round.prizes||[];
-if(typeof prizes==='string')try{prizes=JSON.parse(prizes)}catch(e){}
+  throw new Error(j.error||"Request failed");
 
-$('p1').value=prizes[0]||'';
-$('p2').value=prizes[1]||'';
-$('p3').value=prizes[2]||'';
+ }
 
-$('roundInfo').innerHTML=
-`ዙር: <b>${esc(data.round.round_no||data.round.id||'')}</b><br>
-Start: ${esc(data.round.started_at||'—')}<br>
-Close: ${esc(data.round.closed_at||'—')}`;
+ return j;
+
 }
 
-const winners=data.winners||[];
-$('winnerList').innerHTML=Array.isArray(winners)?
-winners.map((w,i)=>`
-<div class="winner">
-<span>${['🥇','🥈','🥉'][i]||'🏆'} <b>${esc(w.place_label||((i+1)+'ኛ አሸናፊ'))}</b></span>
-<strong>#${esc(w.number)} • ${Number(w.prize||0).toLocaleString()} ETB</strong>
-</div>`).join('')||'<div class="note">አሸናፊ ገና አልወጣም።</div>':'';
 
-users=data.users||[];
-renderUsers(users);
+/* =========================
+   LOGIN
+========================= */
+
+async function login(){
+
+ const pin=$("pin").value.trim();
+
+ if(!pin){
+
+  $("loginMsg").textContent="PIN ያስገቡ።";
+  return;
+
+ }
+
+ try{
+
+  const r=await fetch("/api/admin/login",{
+   method:"POST",
+   headers:{
+    "Content-Type":"application/json"
+   },
+   body:JSON.stringify({pin})
+  });
+
+  const j=await r.json();
+
+  if(!r.ok){
+
+   $("loginMsg").textContent=
+    j.error||"PIN ትክክል አይደለም።";
+
+   return;
+
+  }
+
+  token=j.token;
+
+  sessionStorage.setItem(
+   "lottery-admin-token",
+   token
+  );
+
+  $("login").style.display="none";
+
+  await loadAll();
+
+  toast("✅ Admin ገብተዋል።");
+
+ }catch(e){
+
+  $("loginMsg").textContent=
+   "Server ጋር መገናኘት አልቻለም።";
+
+ }
+
 }
 
-function renderUsers(list){
-$('usersBody').innerHTML=list.length?
-list.map(u=>`
-<tr>
-<td>${esc(u.name||u.userName||'')}</td>
-<td>${esc(u.phone||'')}</td>
-<td>#${esc(u.number||u.ticket||'')}</td>
-<td class="${u.status==='paid'?'statusPaid':'statusPending'}">
-${u.status==='paid'?'✓ Paid':'⏳ Pending'}
-</td>
-</tr>`).join('')
-:'<tr><td colspan="4">መረጃ የለም።</td></tr>';
+
+/* =========================
+   LOGOUT
+========================= */
+
+function logout(){
+
+ sessionStorage.removeItem(
+  "lottery-admin-token"
+ );
+
+ token="";
+
+ location.reload();
+
 }
 
-function filterUsers(){
-const q=$('search').value.trim().toLowerCase();
-renderUsers(users.filter(u=>
-String(u.name||u.userName||'').toLowerCase().includes(q)||
-String(u.phone||'').includes(q)||
-String(u.number||u.ticket||'').includes(q)
-));
+
+/* =========================
+   LOAD ALL
+========================= */
+
+async function loadAll(){
+
+ await loadRounds();
+ await loadUsers();
+
+ if(rounds.length){
+
+  current=
+   rounds.find(x=>x.status==="open")||
+   rounds.find(x=>x.status==="draft")||
+   rounds[0];
+
+  await loadCurrent();
+
+ }
+
 }
 
-async function confirmPay(number){
-try{
-await api('/api/admin/confirm',{
-method:'POST',
-body:JSON.stringify({number})
-});
-toast('✅ ክፍያው ተረጋግጧል።');
-await load();
-}catch(e){toast(e.message)}
+
+/* =========================
+   ROUNDS
+========================= */
+
+async function loadRounds(){
+
+ try{
+
+  const j=await api("/api/admin/rounds");
+
+  rounds=j.rounds||[];
+
+  renderRounds();
+
+ }catch(e){
+
+  toast(e.message);
+
+ }
+
 }
 
-async function releasePay(number){
-if(!confirm('#'+number+' እንዲለቀቅ ይፈልጋሉ?'))return;
-try{
-await api('/api/admin/release',{
-method:'POST',
-body:JSON.stringify({number})
-});
-toast('ትኬቱ ተለቋል።');
-await load();
-}catch(e){toast(e.message)}
+
+function renderRounds(){
+
+ const box=$("roundList");
+
+ if(!rounds.length){
+
+  box.innerHTML=
+   '<div class="note">እስካሁን ዙር የለም።</div>';
+
+  return;
+
+ }
+
+ box.innerHTML=rounds.map(r=>{
+
+  const status=
+   r.status==="open"?"🟢 OPEN":
+   r.status==="closed"?"🔴 CLOSED":
+   r.status==="drawn"?"🏆 DRAWN":
+   "🟡 DRAFT";
+
+  return `
+  <div class="roundItem">
+
+   <b>🎟️ ዙር #${esc(r.round_no)}</b>
+
+   <div class="muted">
+    📅 ${esc(r.draw_date)}
+    • ${status}
+   </div>
+
+   <div class="muted">
+    🎫 ${Number(r.ticket_count||0).toLocaleString()}
+    /
+    ${Number(r.max_numbers||0).toLocaleString()}
+    •
+    💰 ${Number(r.sales||0).toLocaleString()} ETB
+   </div>
+
+   <div class="roundBtns">
+
+    <button
+     class="btn gray"
+     onclick="selectRound('${r.id}')"
+    >
+     👁 ይመልከቱ
+    </button>
+
+    ${
+     r.status==="draft"
+     ?
+     `<button
+       class="btn green"
+       onclick="startRound('${r.id}')"
+      >
+       ▶️ ጀምር
+      </button>`
+     :""
+    }
+
+    ${
+     r.status==="open"
+     ?
+     `<button
+       class="btn red"
+       onclick="closeRound('${r.id}')"
+      >
+       ⏹️ ዝጋ
+      </button>`
+     :""
+    }
+
+   </div>
+
+  </div>
+  `;
+
+ }).join("");
+
 }
 
-async function drawWinners(){
-if(!confirm('ከተከፈሉ ትኬቶች 3 አሸናፊዎች እንዲወጡ?'))return;
-try{
-const j=await api('/api/admin/draw',{method:'POST'});
-toast('🎉 አሸናፊዎች ወጥተዋል!');
-await load();
-}catch(e){toast(e.message)}
+
+/* =========================
+   SELECT ROUND
+========================= */
+
+async function selectRound(id){
+
+ current=rounds.find(x=>String(x.id)===String(id));
+
+ if(!current)return;
+
+ await loadCurrent();
+
+ window.scrollTo({
+  top:0,
+  behavior:"smooth"
+ });
+
 }
+
+
+/* =========================
+   CURRENT ROUND
+========================= */
+
+async function loadCurrent(){
+
+ if(!current)return;
+
+ try{
+
+  const j=await api(
+   "/api/admin/rounds/"+current.id
+  );
+
+  currentDetail=j;
+
+  const r=j.round;
+
+  $("roundStatus").textContent=
+   r.status||"—";
+
+  $("drawDate").value=
+   r.draw_date||"";
+
+  $("roundNo").value=
+   r.round_no||1;
+
+  $("ticketPrice").value=
+   r.ticket_price||100;
+
+  $("maxNumbers").value=
+   r.max_numbers||100;
+
+  let prizes=r.prizes||[];
+
+  if(typeof prizes==="string"){
+
+   try{
+    prizes=JSON.parse(prizes);
+   }catch(e){
+    prizes=[];
+   }
+
+  }
+
+  $("p1").value=prizes[0]||0;
+  $("p2").value=prizes[1]||0;
+  $("p3").value=prizes[2]||0;
+
+  renderCurrent();
+
+ }catch(e){
+
+  toast(e.message);
+
+ }
+
+}
+
+
+/* =========================
+   CURRENT DATA
+========================= */
+
+function renderCurrent(){
+
+ if(!currentDetail)return;
+
+ const r=currentDetail.round;
+ const tickets=currentDetail.tickets||[];
+ const winners=currentDetail.winners||[];
+
+ const paid=tickets.filter(
+  x=>x.status==="paid"
+ ).length;
+
+ const pending=tickets.filter(
+  x=>x.status==="pending"
+ );
+
+ $("totalTickets").textContent=
+  tickets.length.toLocaleString();
+
+ $("paidTickets").textContent=
+  paid.toLocaleString();
+
+ $("remaining").textContent=
+  Math.max(
+   0,
+   Number(r.max_numbers)-tickets.length
+  ).toLocaleString();
+
+ $("revenue").textContent=
+  (
+   paid*Number(r.ticket_price||0)
+  ).toLocaleString();
+
+ $("pendingCount").textContent=
+  pending.length;
+
+ $("pendingList").innerHTML=
+  pending.length
+  ?
+  pending.map(t=>`
+
+   <div class="pending">
+
+    <div>
+     <strong>🎟️ #${esc(t.number)}</strong>
+     <small>
+      ${esc(t.name||"")}
+      • ${esc(t.phone||"")}
+     </small>
+    </div>
+
+    <div class="pendingBtns">
+
+     <button
+      class="btn green"
+      onclick="confirmPay('${r.id}',${Number(t.number)})"
+     >
+      ✓ Paid
+     </button>
+
+     <button
+      class="btn red"
+      onclick="releasePay('${r.id}',${Number(t.number)})"
+     >
+      Release
+     </button>
+
+    </div>
+
+   </div>
+
+  `).join("")
+  :
+  '<div class="note">⏳ Pending ክፍያ የለም።</div>';
+
+
+ $("winnerList").innerHTML=
+  winners.length
+  ?
+  winners.map((w,i)=>`
+
+   <div class="winner">
+
+    <span>
+     ${["🥇","🥈","🥉"][i]||"🏆"}
+     <b>${esc(w.place_label)}</b>
+    </span>
+
+    <strong>
+     #${esc(w.number)}
+     •
+     ${Number(w.prize||0).toLocaleString()} ETB
+    </strong>
+
+   </div>
+
+  `).join("")
+  :
+  '<div class="note">አሸናፊ ገና አልወጣም።</div>';
+
+
+ $("roundInfo").innerHTML=`
+
+  <b>ዙር #${esc(r.round_no)}</b><br>
+
+  📅 ቀን:
+  ${esc(r.draw_date)}<br>
+
+  ▶️ Start:
+  ${esc(r.started_at||"—")}<br>
+
+  ⏹️ Close:
+  ${esc(r.closed_at||"—")}<br>
+
+  🎟️ Tickets:
+  ${tickets.length.toLocaleString()}
+  /
+  ${Number(r.max_numbers).toLocaleString()}
+
+ `;
+
+}
+
+
+/* =========================
+   CREATE ROUND
+========================= */
 
 async function createRound(){
-const body={
-ticketPrice:Number($('ticketPrice').value||100),
-maxNumbers:Number($('maxNumbers').value||100),
-prizes:[
-Number($('p1').value||0),
-Number($('p2').value||0),
-Number($('p3').value||0)
-]
-};
 
-try{
-await api('/api/admin/rounds',{
-method:'POST',
-body:JSON.stringify(body)
-});
-toast('✅ አዲስ ዙር ተፈጥሯል።');
-await load();
-}catch(e){
-toast(e.message);
-}
+ const drawDate=$("drawDate").value;
+ const roundNo=Number($("roundNo").value);
+ const ticketPrice=Number($("ticketPrice").value);
+ const maxNumbers=Number($("maxNumbers").value);
+
+ const prizes=[
+  Number($("p1").value||0),
+  Number($("p2").value||0),
+  Number($("p3").value||0)
+ ];
+
+ if(!drawDate){
+
+  toast("📅 የእጣ ቀን ያስገቡ።");
+  return;
+
+ }
+
+ if(!Number.isInteger(roundNo)||roundNo<1){
+
+  toast("🔢 ዙር ቁጥር ትክክል አይደለም።");
+  return;
+
+ }
+
+ if(!ticketPrice||ticketPrice<1){
+
+  toast("💵 የትኬት ዋጋ ያስገቡ።");
+  return;
+
+ }
+
+ if(!maxNumbers||maxNumbers<1){
+
+  toast("🎟️ የትኬት ብዛት ያስገቡ።");
+  return;
+
+ }
+
+ try{
+
+  const j=await api("/api/admin/rounds",{
+   method:"POST",
+   body:JSON.stringify({
+    drawDate,
+    roundNo,
+    ticketPrice,
+    maxNumbers,
+    prizes
+   })
+  });
+
+  toast("✅ አዲስ ዙር ተፈጥሯል።");
+
+  await loadRounds();
+
+  current=j.round;
+
+  await loadCurrent();
+
+ }catch(e){
+
+  toast(e.message);
+
+ }
+
 }
 
-async function startRound(){
-try{
-if(!confirm('ይህን ዙር አሁን እንጀምር?'))return;
-await api('/api/admin/rounds/start',{method:'POST'});
-toast('▶️ ዙሩ ተጀምሯል።');
-await load();
-}catch(e){toast(e.message)}
+
+/* =========================
+   START
+========================= */
+
+async function startRound(id){
+
+ if(!confirm("ይህን ዙር አሁን እንጀምር?"))
+  return;
+
+ try{
+
+  await api(
+   "/api/admin/rounds/"+id+"/start",
+   {method:"POST"}
+  );
+
+  toast("▶️ ዙሩ ተጀምሯል።");
+
+  await loadRounds();
+
+  current=
+   rounds.find(x=>String(x.id)===String(id));
+
+  await loadCurrent();
+
+ }catch(e){
+
+  toast(e.message);
+
+ }
+
 }
 
-async function closeRound(){
-try{
-if(!confirm('ይህን ዙር እንዘጋ?'))return;
-await api('/api/admin/rounds/close',{method:'POST'});
-toast('⏹️ ዙሩ ተዘግቷል።');
-await load();
-}catch(e){toast(e.message)}
+
+async function startCurrent(){
+
+ if(!current){
+
+  toast("መጀመሪያ ዙር ይፍጠሩ።");
+  return;
+
+ }
+
+ await startRound(current.id);
+
 }
+
+
+/* =========================
+   CLOSE
+========================= */
+
+async function closeRound(id){
+
+ if(!confirm("ይህን ዙር እንዘጋ?"))
+  return;
+
+ try{
+
+  await api(
+   "/api/admin/rounds/"+id+"/close",
+   {method:"POST"}
+  );
+
+  toast("⏹️ ዙሩ ተዘግቷል።");
+
+  await loadRounds();
+
+  current=
+   rounds.find(x=>String(x.id)===String(id));
+
+  await loadCurrent();
+
+ }catch(e){
+
+  toast(e.message);
+
+ }
+
+}
+
+
+async function closeCurrent(){
+
+ if(!current){
+
+  toast("የሚዘጋ ዙር የለም።");
+  return;
+
+ }
+
+ await closeRound(current.id);
+
+}
+
+
+/* =========================
+   PAYMENT CONFIRM
+========================= */
+
+async function confirmPay(roundId,number){
+
+ try{
+
+  await api("/api/admin/confirm",{
+   method:"POST",
+   body:JSON.stringify({
+    roundId,
+    number
+   })
+  });
+
+  toast("✅ ክፍያው ተረጋግጧል።");
+
+  await loadRounds();
+  await loadCurrent();
+
+ }catch(e){
+
+  toast(e.message);
+
+ }
+
+}
+
+
+/* =========================
+   RELEASE
+========================= */
+
+async function releasePay(roundId,number){
+
+ if(!confirm(
+  "#"+number+" ትኬቱን ለመልቀቅ ይፈልጋሉ?"
+ ))return;
+
+ try{
+
+  await api("/api/admin/release",{
+   method:"POST",
+   body:JSON.stringify({
+    roundId,
+    number
+   })
+  });
+
+  toast("♻️ ትኬቱ ተለቋል።");
+
+  await loadRounds();
+  await loadCurrent();
+
+ }catch(e){
+
+  toast(e.message);
+
+ }
+
+}
+
+
+/* =========================
+   DRAW
+========================= */
+
+async function drawCurrent(){
+
+ if(!current){
+
+  toast("ዙር የለም።");
+  return;
+
+ }
+
+ if(current.status!=="closed"){
+
+  toast("⏹️ መጀመሪያ ዙሩን ዝጉ።");
+  return;
+
+ }
+
+ if(!confirm(
+  "ከPaid ትኬቶች አሸናፊዎች እንዲወጡ?"
+ ))return;
+
+ try{
+
+  const j=await api("/api/admin/draw",{
+   method:"POST",
+   body:JSON.stringify({
+    roundId:current.id
+   })
+  });
+
+  toast("🎉 አሸናፊዎች ወጥተዋል!");
+
+  await loadRounds();
+  await loadCurrent();
+
+ }catch(e){
+
+  toast(e.message);
+
+ }
+
+}
+
+
+/* =========================
+   USERS
+========================= */
+
+async function loadUsers(){
+
+ try{
+
+  const j=await api("/api/admin/users");
+
+  users=j.users||[];
+
+  renderUsers(users);
+
+ }catch(e){
+
+  toast(e.message);
+
+ }
+
+}
+
+
+function renderUsers(list){
+
+ $("usersBody").innerHTML=
+  list.length
+  ?
+  list.map(u=>`
+
+   <tr>
+
+    <td>${esc(u.name||"")}</td>
+
+    <td>${esc(u.phone||"")}</td>
+
+    <td>${Number(u.tickets||0)}</td>
+
+    <td class="paid">
+     ${Number(u.tickets||0)>0?"✓":"—"}
+    </td>
+
+   </tr>
+
+  `).join("")
+  :
+  `<tr>
+   <td colspan="4">
+    መረጃ የለም።
+   </td>
+  </tr>`;
+
+}
+
+
+function filterUsers(){
+
+ const q=
+  $("search").value.trim().toLowerCase();
+
+ renderUsers(
+  users.filter(u=>
+   String(u.name||"")
+    .toLowerCase()
+    .includes(q)
+   ||
+   String(u.phone||"")
+    .includes(q)
+  )
+ );
+
+}
+
+
+/* =========================
+   ESCAPE
+========================= */
 
 function esc(v){
-return String(v??'').replace(/[&<>'"]/g,c=>({
-'&':'&amp;','<':'&lt;','>':'&gt;',
-"'":'&#39;','"':'&quot;'
-}[c]));
+
+ return String(v??"")
+ .replace(/[&<>'"]/g,c=>({
+  "&":"&amp;",
+  "<":"&lt;",
+  ">":"&gt;",
+  "'":"&#39;",
+  '"':"&quot;"
+ }[c]));
+
 }
+
+
+/* =========================
+   DEFAULT DATE
+========================= */
+
+(function(){
+
+ const d=new Date();
+
+ const yyyy=d.getFullYear();
+
+ const mm=String(
+  d.getMonth()+1
+ ).padStart(2,"0");
+
+ const dd=String(
+  d.getDate()
+ ).padStart(2,"0");
+
+ $("drawDate").value=
+  `${yyyy}-${mm}-${dd}`;
+
+})();
+
+
+/* =========================
+   START
+========================= */
 
 if(token){
-$('login').style.display='none';
-load();
+
+ $("login").style.display="none";
+
+ loadAll();
+
 }
 
-setInterval(()=>{
-if(token)load();
-},5000);
 </script>
 
 </body>
