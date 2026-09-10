@@ -1,30 +1,1580 @@
-const express=require('express');const path=require('path');const crypto=require('crypto');const jwt=require('jsonwebtoken');const helmet=require('helmet');const rateLimit=require('express-rate-limit');const {Pool}=require('pg');
-const app=express();app.set('trust proxy',1);app.use(helmet({contentSecurityPolicy:false}));app.use(express.json({limit:'100kb'}));
-const PORT=Number(process.env.PORT||3000),DATABASE_URL=String(process.env.DATABASE_URL||'').trim(),JWT_SECRET=String(process.env.JWT_SECRET||''),ADMIN_PIN=String(process.env.ADMIN_PIN||'');
-if(!DATABASE_URL||!JWT_SECRET||!ADMIN_PIN){console.error('CONFIG_ERROR: Missing DATABASE_URL, JWT_SECRET or ADMIN_PIN');process.exit(1)}
-const pool=new Pool({connectionString:DATABASE_URL,ssl:process.env.DATABASE_SSL==='false'?false:{rejectUnauthorized:false},max:Number(process.env.DB_POOL_MAX||10),idleTimeoutMillis:30000,connectionTimeoutMillis:10000});pool.on('error',e=>console.error('DB_POOL_ERROR:',e.message));
-const authLimiter=rateLimit({windowMs:15*60*1000,max:100,standardHeaders:true,legacyHeaders:false});const adminLimiter=rateLimit({windowMs:15*60*1000,max:60,standardHeaders:true,legacyHeaders:false});
-function bearer(req){const h=req.headers.authorization||'';return h.startsWith('Bearer ')?h.slice(7):''}function signUser(u){return jwt.sign({sub:u.id,role:'user'},JWT_SECRET,{expiresIn:'30d'})}function signAdmin(){return jwt.sign({role:'admin'},JWT_SECRET,{expiresIn:'30m'})}
-function requireUser(req,res,next){try{const p=jwt.verify(bearer(req),JWT_SECRET);if(p.role!=='user'||!p.sub)throw 0;req.auth=p;next()}catch{res.status(401).json({error:'የመግቢያ ፍቃድ አልተገኘም።'})}}
-function requireAdmin(req,res,next){try{const p=jwt.verify(bearer(req),JWT_SECRET);if(p.role!=='admin')throw 0;req.auth=p;next()}catch{res.status(401).json({error:'የአድሚን ፍቃድ አልተገኘም።'})}}
-function validPhone(x){return /^\d{10}$/.test(String(x||''))}function int(x){return Number.isInteger(Number(x))?Number(x):NaN}
-async function getRound(id,client=pool){const r=await client.query('SELECT * FROM rounds WHERE id=$1',[id]);return r.rows[0]||null}
-async function activeRound(){const r=await pool.query("SELECT * FROM rounds WHERE status='open' AND draw_date=CURRENT_DATE ORDER BY round_no LIMIT 1");return r.rows[0]||null}
-app.get('/api/health',async(req,res)=>{try{await pool.query('SELECT 1');res.json({ok:true,database:true})}catch(e){console.error(e);res.status(503).json({ok:false,database:false})}});
-app.post('/api/users/register',authLimiter,async(req,res)=>{const name=String(req.body?.name||'').trim(),phone=String(req.body?.phone||'').trim();if(name.length<2||name.length>80)return res.status(400).json({error:'እባክዎ ትክክለኛ ስም ያስገቡ።'});if(!validPhone(phone))return res.status(400).json({error:'ስልክ ቁጥሩ 10 ዲጂት መሆን አለበት።'});try{let r=await pool.query('SELECT id,name,phone FROM users WHERE phone=$1',[phone]);let u;if(r.rowCount){u=r.rows[0];if(u.name!==name){r=await pool.query('UPDATE users SET name=$1 WHERE id=$2 RETURNING id,name,phone',[name,u.id]);u=r.rows[0]}}else{r=await pool.query('INSERT INTO users(id,name,phone) VALUES($1,$2,$3) RETURNING id,name,phone',[crypto.randomUUID(),name,phone]);u=r.rows[0]}res.json({user:u,token:signUser(u)})}catch(e){console.error(e);res.status(503).json({error:'አካውንት መክፈት አልተቻለም።'})}});
-app.get('/api/rounds/today',async(req,res)=>{try{const r=await pool.query("SELECT r.*,COUNT(t.id)::int AS taken_count FROM rounds r LEFT JOIN tickets t ON t.round_id=r.id WHERE r.draw_date=CURRENT_DATE GROUP BY r.id ORDER BY r.round_no");res.json({rounds:r.rows})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-app.get('/api/rounds/:id/state',async(req,res)=>{try{const r=await getRound(req.params.id);if(!r)return res.status(404).json({error:'ዙሩ አልተገኘም።'});const [t,w]=await Promise.all([pool.query('SELECT number,status FROM tickets WHERE round_id=$1 ORDER BY number',[r.id]),pool.query('SELECT place,place_label,number,prize FROM winners WHERE round_id=$1 ORDER BY place',[r.id])]);const taken={};t.rows.forEach(x=>taken[x.number]={status:x.status});res.json({round:r,taken,winners:w.rows})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-app.get('/api/me',requireUser,async(req,res)=>{try{const u=await pool.query('SELECT id,name,phone FROM users WHERE id=$1',[req.auth.sub]);if(!u.rowCount)return res.status(404).json({error:'አካውንቱ አልተገኘም።'});const t=await pool.query(`SELECT t.id,t.number,t.status,t.created_at,t.paid_at,r.id AS round_id,r.round_no,r.draw_date,r.ticket_price FROM tickets t JOIN rounds r ON r.id=t.round_id WHERE t.user_id=$1 ORDER BY r.draw_date DESC,r.round_no DESC,t.number`,[req.auth.sub]);res.json({user:u.rows[0],tickets:t.rows})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-app.post('/api/take',requireUser,async(req,res)=>{const roundId=String(req.body?.roundId||''),number=int(req.body?.number);if(!roundId||!Number.isInteger(number)||number<1)return res.status(400).json({error:'ትክክለኛ ዙርና ቁጥር ይምረጡ።'});const c=await pool.connect();try{await c.query('BEGIN');const r=await getRound(roundId,c);if(!r){await c.query('ROLLBACK');return res.status(404).json({error:'ዙሩ አልተገኘም።'})}if(r.status!=='open'){await c.query('ROLLBACK');return res.status(409).json({error:'ይህ ዙር ክፍት አይደለም።'})}if(number>r.max_numbers){await c.query('ROLLBACK');return res.status(400).json({error:`1 እስከ ${r.max_numbers} ያለ ቁጥር ይምረጡ።`})}const ins=await c.query(`INSERT INTO tickets(round_id,number,user_id,status) VALUES($1,$2,$3,'pending') ON CONFLICT(round_id,number) DO NOTHING RETURNING id,number,status`,[roundId,number,req.auth.sub]);if(!ins.rowCount){await c.query('ROLLBACK');return res.status(409).json({error:'ይህ ቁጥር ቀድሞ ተይዟል።'})}await c.query('COMMIT');res.json({ok:true,ticket:ins.rows[0],message:'ቁጥሩ ተይዟል።'})}catch(e){await c.query('ROLLBACK').catch(()=>{});console.error(e);res.status(503).json({error:'ቁጥር መያዝ አልተቻለም።'})}finally{c.release()}});
-app.post('/api/admin/login',adminLimiter,(req,res)=>{if(String(req.body?.pin||'')!==ADMIN_PIN)return res.status(401).json({error:'የአድሚን PIN ተሳስቷል።'});res.json({token:signAdmin()})});
-app.get('/api/admin/rounds',requireAdmin,async(req,res)=>{try{const r=await pool.query(`SELECT r.*,COUNT(t.id)::int AS ticket_count,COUNT(t.id) FILTER(WHERE t.status='paid')::int AS paid_count,COALESCE(SUM(CASE WHEN t.status='paid' THEN r.ticket_price ELSE 0 END),0) AS sales FROM rounds r LEFT JOIN tickets t ON t.round_id=r.id GROUP BY r.id ORDER BY r.draw_date DESC,r.round_no DESC`);res.json({rounds:r.rows.map(x=>({...x,ticket_count:x.ticket_count,paid_count:x.paid_count,sales:x.sales}))})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-app.post('/api/admin/rounds',requireAdmin,async(req,res)=>{const drawDate=String(req.body?.drawDate||'').trim(),roundNo=int(req.body?.roundNo),ticketPrice=Number(req.body?.ticketPrice),maxNumbers=int(req.body?.maxNumbers);if(!/^\d{4}-\d{2}-\d{2}$/.test(drawDate)||!Number.isInteger(roundNo)||roundNo<1||!Number.isFinite(ticketPrice)||ticketPrice<=0||!Number.isInteger(maxNumbers)||maxNumbers<1||maxNumbers>1000000)return res.status(400).json({error:'የዙር ቀን፣ ቁጥር ብዛት እና ዋጋ ትክክል ያስገቡ።'});const prizes=Array.isArray(req.body?.prizes)?req.body.prizes.map(Number).filter(Number.isFinite):[];if(!prizes.length||prizes.some(x=>x<0))return res.status(400).json({error:'የእጣ ሽልማቶችን ያስገቡ።'});try{const r=await pool.query(`INSERT INTO rounds(id,draw_date,round_no,ticket_price,max_numbers,status,prizes,started_at) VALUES($1,$2,$3,$4,$5,'draft',$6::jsonb,NULL) RETURNING *`,[crypto.randomUUID(),drawDate,roundNo,ticketPrice,maxNumbers,JSON.stringify(prizes)]);res.json({ok:true,round:r.rows[0]})}catch(e){if(e.code==='23505')return res.status(409).json({error:'ይህ ቀንና ዙር ቁጥር አስቀድሞ አለ።'});console.error(e);res.status(503).json({error:'ዙር መፍጠር አልተቻለም።'})}});
-app.post('/api/admin/rounds/:id/start',requireAdmin,async(req,res)=>{try{const r=await pool.query("UPDATE rounds SET status='open',started_at=COALESCE(started_at,NOW()) WHERE id=$1 AND status='draft' RETURNING *",[req.params.id]);if(!r.rowCount)return res.status(409).json({error:'ዙሩ መጀመር አልተቻለም።'});res.json({ok:true,round:r.rows[0]})}catch(e){console.error(e);res.status(503).json({error:'ዙሩን መጀመር አልተቻለም።'})}});
-app.post('/api/admin/rounds/:id/close',requireAdmin,async(req,res)=>{try{const r=await pool.query("UPDATE rounds SET status='closed',closed_at=NOW() WHERE id=$1 AND status='open' RETURNING *",[req.params.id]);if(!r.rowCount)return res.status(409).json({error:'ዙሩ መዝጋት አልተቻለም።'});res.json({ok:true,round:r.rows[0]})}catch(e){console.error(e);res.status(503).json({error:'ዙሩን መዝጋት አልተቻለም።'})}});
-app.get('/api/admin/rounds/:id',requireAdmin,async(req,res)=>{try{const r=await getRound(req.params.id);if(!r)return res.status(404).json({error:'ዙሩ አልተገኘም።'});const t=await pool.query(`SELECT t.id,t.number,t.status,t.created_at,t.paid_at,u.name,u.phone FROM tickets t JOIN users u ON u.id=t.user_id WHERE t.round_id=$1 ORDER BY t.created_at ASC`,[r.id]);const w=await pool.query('SELECT place,place_label,number,prize FROM winners WHERE round_id=$1 ORDER BY place',[r.id]);res.json({round:r,tickets:t.rows,winners:w.rows})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-app.post('/api/admin/confirm',requireAdmin,async(req,res)=>{const roundId=String(req.body?.roundId||''),number=int(req.body?.number);try{const r=await pool.query("UPDATE tickets SET status='paid',paid_at=NOW() WHERE round_id=$1 AND number=$2 AND status='pending' RETURNING number,status",[roundId,number]);if(!r.rowCount)return res.status(404).json({error:'Pending ትኬቱ አልተገኘም።'});res.json({ok:true,ticket:r.rows[0]})}catch(e){console.error(e);res.status(503).json({error:'ክፍያውን ማረጋገጥ አልተቻለም።'})}});
-app.post('/api/admin/release',requireAdmin,async(req,res)=>{try{const r=await pool.query("DELETE FROM tickets WHERE round_id=$1 AND number=$2 AND status='pending' RETURNING number",[String(req.body?.roundId||''),int(req.body?.number)]);if(!r.rowCount)return res.status(404).json({error:'Pending ትኬቱ አልተገኘም።'});res.json({ok:true})}catch(e){console.error(e);res.status(503).json({error:'ትኬቱን መልቀቅ አልተቻለም።'})}});
-app.post('/api/admin/draw',requireAdmin,async(req,res)=>{const id=String(req.body?.roundId||''),c=await pool.connect();try{await c.query('BEGIN');await c.query('SELECT pg_advisory_xact_lock(hashtext($1))',[id]);const r=await getRound(id,c);if(!r){await c.query('ROLLBACK');return res.status(404).json({error:'ዙሩ አልተገኘም።'})}if(r.status!=='closed') {await c.query('ROLLBACK');return res.status(409).json({error:'እጣ ለማውጣት መጀመሪያ ዙሩን ዝጉ።'})}const ex=await c.query('SELECT 1 FROM winners WHERE round_id=$1 LIMIT 1',[id]);if(ex.rowCount){await c.query('ROLLBACK');return res.status(409).json({error:'የዚህ ዙር እጣ አስቀድሞ ወጥቷል።'})}const paid=await c.query('SELECT id,number,user_id FROM tickets WHERE round_id=$1 AND status=\'paid\' ORDER BY random() LIMIT $2',[id,Math.max(1,r.prizes.length)]);if(paid.rowCount<r.prizes.length){await c.query('ROLLBACK');return res.status(400).json({error:`ለ${r.prizes.length} እጣ በቂ Paid ትኬት የለም።`})}const labels=['1ኛ እጣ','2ኛ እጣ','3ኛ እጣ','4ኛ እጣ','5ኛ እጣ'];const out=[];for(let i=0;i<r.prizes.length;i++){const x=paid.rows[i];const label=labels[i]||`${i+1}ኛ እጣ`;await c.query('INSERT INTO winners(id,round_id,place,place_label,number,ticket_id,user_id,prize) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',[crypto.randomUUID(),id,i+1,label,x.number,x.id,x.user_id,Number(r.prizes[i])]);out.push({place:i+1,place_label:label,number:x.number,prize:Number(r.prizes[i])})}await c.query("UPDATE rounds SET status='drawn',drawn_at=NOW() WHERE id=$1",[id]);await c.query('COMMIT');res.json({ok:true,winners:out})}catch(e){await c.query('ROLLBACK').catch(()=>{});console.error(e);res.status(503).json({error:'እጣውን ማውጣት አልተቻለም።'})}finally{c.release()}});
-app.get('/api/admin/users',requireAdmin,async(req,res)=>{try{const r=await pool.query(`SELECT u.id,u.name,u.phone,u.created_at,COUNT(t.id)::int AS tickets FROM users u LEFT JOIN tickets t ON t.user_id=u.id GROUP BY u.id ORDER BY u.created_at DESC`);res.json({users:r.rows})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-app.use('/admin',express.static(path.join(__dirname,'admin')));app.use(express.static(path.join(__dirname,'public')));app.get('/admin/*',(req,res)=>res.sendFile(path.join(__dirname,'admin','index.html')));app.get('*',(req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
-app.listen(PORT,'0.0.0.0',()=>console.log(`Lottery V7 listening on ${PORT}`));
+const express=require('express');
+const path=require('path');
+const crypto=require('crypto');
+const jwt=require('jsonwebtoken');
+const helmet=require('helmet');
+const rateLimit=require('express-rate-limit');
+const {Pool}=require('pg');
+
+const app=express();
+
+app.set('trust proxy',1);
+
+app.use(
+ helmet({
+  contentSecurityPolicy:false
+ })
+);
+
+app.use(
+ express.json({
+  limit:'100kb'
+ })
+);
+
+const PORT=Number(
+ process.env.PORT||3000
+);
+
+const DATABASE_URL=String(
+ process.env.DATABASE_URL||''
+).trim();
+
+const JWT_SECRET=String(
+ process.env.JWT_SECRET||''
+);
+
+const ADMIN_PIN=String(
+ process.env.ADMIN_PIN||''
+);
+
+if(
+ !DATABASE_URL||
+ !JWT_SECRET||
+ !ADMIN_PIN
+){
+ console.error(
+  'CONFIG_ERROR: Missing DATABASE_URL, JWT_SECRET or ADMIN_PIN'
+ );
+ process.exit(1);
+}
+
+
+/* =========================
+   DATABASE POOL
+========================= */
+
+const pool=new Pool({
+
+ connectionString:DATABASE_URL,
+
+ ssl:
+  process.env.DATABASE_SSL==='false'
+   ? false
+   : {
+      rejectUnauthorized:false
+     },
+
+ /*
+  * Supabase/Render free database:
+  * keep connections low
+  */
+ max:5,
+
+ min:0,
+
+ idleTimeoutMillis:10000,
+
+ connectionTimeoutMillis:10000,
+
+ allowExitOnIdle:true
+
+});
+
+pool.on(
+ 'error',
+ e=>console.error(
+  'DB_POOL_ERROR:',
+  e.message
+ )
+);
+
+
+/* =========================
+   RATE LIMITERS
+========================= */
+
+const authLimiter=rateLimit({
+
+ windowMs:15*60*1000,
+
+ max:100,
+
+ standardHeaders:true,
+
+ legacyHeaders:false
+
+});
+
+const adminLimiter=rateLimit({
+
+ windowMs:15*60*1000,
+
+ max:60,
+
+ standardHeaders:true,
+
+ legacyHeaders:false
+
+});
+
+
+/* =========================
+   AUTH
+========================= */
+
+function bearer(req){
+
+ const h=
+  req.headers.authorization||'';
+
+ return h.startsWith('Bearer ')
+  ? h.slice(7)
+  : '';
+
+}
+
+
+function signUser(u){
+
+ return jwt.sign(
+  {
+   sub:u.id,
+   role:'user'
+  },
+  JWT_SECRET,
+  {
+   expiresIn:'30d'
+  }
+ );
+
+}
+
+
+function signAdmin(){
+
+ return jwt.sign(
+  {
+   role:'admin'
+  },
+  JWT_SECRET,
+  {
+   expiresIn:'30m'
+  }
+ );
+
+}
+
+
+function requireUser(
+ req,
+ res,
+ next
+){
+
+ try{
+
+  const p=
+   jwt.verify(
+    bearer(req),
+    JWT_SECRET
+   );
+
+  if(
+   p.role!=='user'||
+   !p.sub
+  ){
+   throw 0;
+  }
+
+  req.auth=p;
+
+  next();
+
+ }catch{
+
+  res.status(401).json({
+   error:'የመግቢያ ፍቃድ አልተገኘም።'
+  });
+
+ }
+
+}
+
+
+function requireAdmin(
+ req,
+ res,
+ next
+){
+
+ try{
+
+  const p=
+   jwt.verify(
+    bearer(req),
+    JWT_SECRET
+   );
+
+  if(
+   p.role!=='admin'
+  ){
+   throw 0;
+  }
+
+  req.auth=p;
+
+  next();
+
+ }catch{
+
+  res.status(401).json({
+   error:'የአድሚን ፍቃድ አልተገኘም።'
+  });
+
+ }
+
+}
+
+
+/* =========================
+   HELPERS
+========================= */
+
+function validPhone(x){
+
+ return /^\d{10}$/.test(
+  String(x||'')
+ );
+
+}
+
+
+function int(x){
+
+ return Number.isInteger(
+  Number(x)
+ )
+  ? Number(x)
+  : NaN;
+
+}
+
+
+async function getRound(
+ id,
+ client=pool
+){
+
+ const r=await client.query(
+  'SELECT * FROM rounds WHERE id=$1',
+  [id]
+ );
+
+ return r.rows[0]||null;
+
+}
+
+
+async function activeRound(){
+
+ const r=await pool.query(
+  "SELECT * FROM rounds WHERE status='open' AND draw_date=CURRENT_DATE ORDER BY round_no LIMIT 1"
+ );
+
+ return r.rows[0]||null;
+
+}
+
+
+/* =========================
+   HEALTH
+========================= */
+
+app.get(
+ '/api/health',
+ async(req,res)=>{
+
+  try{
+
+   await pool.query(
+    'SELECT 1'
+   );
+
+   res.json({
+    ok:true,
+    database:true
+   });
+
+  }catch(e){
+
+   console.error(e);
+
+   res.status(503).json({
+    ok:false,
+    database:false
+   });
+
+  }
+
+ }
+);
+
+
+/* =========================
+   USER REGISTER
+========================= */
+
+app.post(
+ '/api/users/register',
+ authLimiter,
+ async(req,res)=>{
+
+  const name=
+   String(
+    req.body?.name||''
+   ).trim();
+
+  const phone=
+   String(
+    req.body?.phone||''
+   ).trim();
+
+  if(
+   name.length<2||
+   name.length>80
+  ){
+
+   return res.status(400).json({
+    error:'እባክዎ ትክክለኛ ስም ያስገቡ።'
+   });
+
+  }
+
+  if(!validPhone(phone)){
+
+   return res.status(400).json({
+    error:'ስልክ ቁጥሩ 10 ዲጂት መሆን አለበት።'
+   });
+
+  }
+
+  try{
+
+   let r=await pool.query(
+    'SELECT id,name,phone FROM users WHERE phone=$1',
+    [phone]
+   );
+
+   let u;
+
+   if(r.rowCount){
+
+    u=r.rows[0];
+
+    if(u.name!==name){
+
+     r=await pool.query(
+      'UPDATE users SET name=$1 WHERE id=$2 RETURNING id,name,phone',
+      [
+       name,
+       u.id
+      ]
+     );
+
+     u=r.rows[0];
+
+    }
+
+   }else{
+
+    r=await pool.query(
+     'INSERT INTO users(id,name,phone) VALUES($1,$2,$3) RETURNING id,name,phone',
+     [
+      crypto.randomUUID(),
+      name,
+      phone
+     ]
+    );
+
+    u=r.rows[0];
+
+   }
+
+   res.json({
+    user:u,
+    token:signUser(u)
+   });
+
+  }catch(e){
+
+   console.error(e);
+
+   res.status(503).json({
+    error:'አካውንት መክፈት አልተቻለም።'
+   });
+
+  }
+
+ }
+);
+
+
+/* =========================
+   TODAY ROUNDS
+========================= */
+
+app.get(
+ '/api/rounds/today',
+ async(req,res)=>{
+
+  try{
+
+   const r=await pool.query(
+    "SELECT r.*,COUNT(t.id)::int AS taken_count FROM rounds r LEFT JOIN tickets t ON t.round_id=r.id WHERE r.draw_date=CURRENT_DATE GROUP BY r.id ORDER BY r.round_no"
+   );
+
+   res.json({
+    rounds:r.rows
+   });
+
+  }catch(e){
+
+   console.error(e);
+
+   res.status(503).json({
+    error:'Database connection failed'
+   });
+
+  }
+
+ }
+);
+
+
+/* =========================
+   ROUND STATE
+========================= */
+
+app.get(
+ '/api/rounds/:id/state',
+ async(req,res)=>{
+
+  try{
+
+   const r=await getRound(
+    req.params.id
+   );
+
+   if(!r){
+
+    return res.status(404).json({
+     error:'ዙሩ አልተገኘም።'
+    });
+
+   }
+
+   const [
+    t,
+    w
+   ]=await Promise.all([
+
+    pool.query(
+     'SELECT number,status FROM tickets WHERE round_id=$1 ORDER BY number',
+     [r.id]
+    ),
+
+    pool.query(
+     'SELECT place,place_label,number,prize FROM winners WHERE round_id=$1 ORDER BY place',
+     [r.id]
+    )
+
+   ]);
+
+   const taken={};
+
+   t.rows.forEach(
+    x=>{
+     taken[x.number]={
+      status:x.status
+     };
+    }
+   );
+
+   res.json({
+    round:r,
+    taken,
+    winners:w.rows
+   });
+
+  }catch(e){
+
+   console.error(e);
+
+   res.status(503).json({
+    error:'Database connection failed'
+   });
+
+  }
+
+ }
+);
+
+
+/* =========================
+   ME
+========================= */
+
+app.get(
+ '/api/me',
+ requireUser,
+ async(req,res)=>{
+
+  try{
+
+   const u=await pool.query(
+    'SELECT id,name,phone FROM users WHERE id=$1',
+    [req.auth.sub]
+   );
+
+   if(!u.rowCount){
+
+    return res.status(404).json({
+     error:'አካውንቱ አልተገኘም።'
+    });
+
+   }
+
+   const t=await pool.query(
+    `SELECT
+      t.id,
+      t.number,
+      t.status,
+      t.created_at,
+      t.paid_at,
+      r.id AS round_id,
+      r.round_no,
+      r.draw_date,
+      r.ticket_price
+     FROM tickets t
+     JOIN rounds r ON r.id=t.round_id
+     WHERE t.user_id=$1
+     ORDER BY
+      r.draw_date DESC,
+      r.round_no DESC,
+      t.number`,
+    [req.auth.sub]
+   );
+
+   res.json({
+    user:u.rows[0],
+    tickets:t.rows
+   });
+
+  }catch(e){
+
+   console.error(e);
+
+   res.status(503).json({
+    error:'Database connection failed'
+   });
+
+  }
+
+ }
+);
+
+
+/* =========================
+   TAKE TICKET
+========================= */
+
+app.post(
+ '/api/take',
+ requireUser,
+ async(req,res)=>{
+
+  const roundId=
+   String(
+    req.body?.roundId||''
+   );
+
+  const number=
+   int(req.body?.number);
+
+  if(
+   !roundId||
+   !Number.isInteger(number)||
+   number<1
+  ){
+
+   return res.status(400).json({
+    error:'ትክክለኛ ዙርና ቁጥር ይምረጡ።'
+   });
+
+  }
+
+  const c=
+   await pool.connect();
+
+  try{
+
+   await c.query(
+    'BEGIN'
+   );
+
+   const r=
+    await getRound(
+     roundId,
+     c
+    );
+
+   if(!r){
+
+    await c.query(
+     'ROLLBACK'
+    );
+
+    return res.status(404).json({
+     error:'ዙሩ አልተገኘም።'
+    });
+
+   }
+
+   if(r.status!=='open'){
+
+    await c.query(
+     'ROLLBACK'
+    );
+
+    return res.status(409).json({
+     error:'ይህ ዙር ክፍት አይደለም።'
+    });
+
+   }
+
+   if(number>r.max_numbers){
+
+    await c.query(
+     'ROLLBACK'
+    );
+
+    return res.status(400).json({
+     error:
+      `1 እስከ ${r.max_numbers} ያለ ቁጥር ይምረጡ።`
+    });
+
+   }
+
+   const ins=
+    await c.query(
+     `INSERT INTO tickets(
+       round_id,
+       number,
+       user_id,
+       status
+      )
+      VALUES(
+       $1,
+       $2,
+       $3,
+       'pending'
+      )
+      ON CONFLICT(
+       round_id,
+       number
+      )
+      DO NOTHING
+      RETURNING id,number,status`,
+     [
+      roundId,
+      number,
+      req.auth.sub
+     ]
+    );
+
+   if(!ins.rowCount){
+
+    await c.query(
+     'ROLLBACK'
+    );
+
+    return res.status(409).json({
+     error:'ይህ ቁጥር ቀድሞ ተይዟል።'
+    });
+
+   }
+
+   await c.query(
+    'COMMIT'
+   );
+
+   res.json({
+    ok:true,
+    ticket:ins.rows[0],
+    message:'ቁጥሩ ተይዟል።'
+   });
+
+  }catch(e){
+
+   await c.query(
+    'ROLLBACK'
+   ).catch(()=>{});
+
+   console.error(e);
+
+   res.status(503).json({
+    error:'ቁጥር መያዝ አልተቻለም።'
+   });
+
+  }finally{
+
+   c.release();
+
+  }
+
+ }
+);
+
+
+/* =========================
+   ADMIN LOGIN
+========================= */
+
+app.post(
+ '/api/admin/login',
+ adminLimiter,
+ (req,res)=>{
+
+  if(
+   String(
+    req.body?.pin||''
+   )!==ADMIN_PIN
+  ){
+
+   return res.status(401).json({
+    error:'የአድሚን PIN ተሳስቷል።'
+   });
+
+  }
+
+  res.json({
+   token:signAdmin()
+  });
+
+ }
+);
+
+
+/* =========================
+   ADMIN ROUNDS
+========================= */
+
+app.get(
+ '/api/admin/rounds',
+ requireAdmin,
+ async(req,res)=>{
+
+  try{
+
+   const r=await pool.query(
+    `SELECT
+      r.*,
+      COUNT(t.id)::int AS ticket_count,
+      COUNT(t.id)
+       FILTER(
+        WHERE t.status='paid'
+       )::int AS paid_count,
+      COALESCE(
+       SUM(
+        CASE
+         WHEN t.status='paid'
+         THEN r.ticket_price
+         ELSE 0
+        END
+       ),
+       0
+      ) AS sales
+     FROM rounds r
+     LEFT JOIN tickets t
+      ON t.round_id=r.id
+     GROUP BY r.id
+     ORDER BY
+      r.draw_date DESC,
+      r.round_no DESC`
+   );
+
+   res.json({
+    rounds:r.rows.map(
+     x=>({
+      ...x,
+      ticket_count:x.ticket_count,
+      paid_count:x.paid_count,
+      sales:x.sales
+     })
+    )
+   });
+
+  }catch(e){
+
+   console.error(e);
+
+   res.status(503).json({
+    error:'Database connection failed'
+   });
+
+  }
+
+ }
+);
+
+
+/* =========================
+   CREATE ROUND
+========================= */
+
+app.post(
+ '/api/admin/rounds',
+ requireAdmin,
+ async(req,res)=>{
+
+  const drawDate=
+   String(
+    req.body?.drawDate||''
+   ).trim();
+
+  const roundNo=
+   int(req.body?.roundNo);
+
+  const ticketPrice=
+   Number(
+    req.body?.ticketPrice
+   );
+
+  const maxNumbers=
+   int(
+    req.body?.maxNumbers
+   );
+
+  if(
+   !/^\d{4}-\d{2}-\d{2}$/.test(drawDate)||
+   !Number.isInteger(roundNo)||
+   roundNo<1||
+   !Number.isFinite(ticketPrice)||
+   ticketPrice<=0||
+   !Number.isInteger(maxNumbers)||
+   maxNumbers<1||
+   maxNumbers>1000000
+  ){
+
+   return res.status(400).json({
+    error:'የዙር ቀን፣ ቁጥር ብዛት እና ዋጋ ትክክል ያስገቡ።'
+   });
+
+  }
+
+  const prizes=
+   Array.isArray(
+    req.body?.prizes
+   )
+    ?
+    req.body.prizes
+     .map(Number)
+     .filter(Number.isFinite)
+    :
+    [];
+
+  if(
+   !prizes.length||
+   prizes.some(
+    x=>x<0
+   )
+  ){
+
+   return res.status(400).json({
+    error:'የእጣ ሽልማቶችን ያስገቡ።'
+   });
+
+  }
+
+  try{
+
+   const r=await pool.query(
+    `INSERT INTO rounds(
+      id,
+      draw_date,
+      round_no,
+      ticket_price,
+      max_numbers,
+      status,
+      prizes,
+      started_at
+     )
+     VALUES(
+      $1,
+      $2,
+      $3,
+      $4,
+      $5,
+      'draft',
+      $6::jsonb,
+      NULL
+     )
+     RETURNING *`,
+    [
+     crypto.randomUUID(),
+     drawDate,
+     roundNo,
+     ticketPrice,
+     maxNumbers,
+     JSON.stringify(prizes)
+    ]
+   );
+
+   res.json({
+    ok:true,
+    round:r.rows[0]
+   });
+
+  }catch(e){
+
+   if(e.code==='23505'){
+
+    return res.status(409).json({
+     error:'ይህ ቀንና ዙር ቁጥር አስቀድሞ አለ።'
+    });
+
+   }
+
+   console.error(e);
+
+   res.status(503).json({
+    error:'ዙር መፍጠር አልተቻለም።'
+   });
+
+  }
+
+ }
+);
+
+
+/* =========================
+   START ROUND
+========================= */
+
+app.post(
+ '/api/admin/rounds/:id/start',
+ requireAdmin,
+ async(req,res)=>{
+
+  try{
+
+   const r=await pool.query(
+    `UPDATE rounds
+     SET
+      status='open',
+      started_at=
+       COALESCE(
+        started_at,
+        NOW()
+       )
+     WHERE
+      id=$1
+      AND status='draft'
+     RETURNING *`,
+    [req.params.id]
+   );
+
+   if(!r.rowCount){
+
+    return res.status(409).json({
+     error:'ዙሩ መጀመር አልተቻለም።'
+    });
+
+   }
+
+   res.json({
+    ok:true,
+    round:r.rows[0]
+   });
+
+  }catch(e){
+
+   console.error(e);
+
+   res.status(503).json({
+    error:'ዙሩን መጀመር አልተቻለም።'
+   });
+
+  }
+
+ }
+);
+
+
+/* =========================
+   CLOSE ROUND
+========================= */
+
+app.post(
+ '/api/admin/rounds/:id/close',
+ requireAdmin,
+ async(req,res)=>{
+
+  try{
+
+   const r=await pool.query(
+    `UPDATE rounds
+     SET
+      status='closed',
+      closed_at=NOW()
+     WHERE
+      id=$1
+      AND status='open'
+     RETURNING *`,
+    [req.params.id]
+   );
+
+   if(!r.rowCount){
+
+    return res.status(409).json({
+     error:'ዙሩ መዝጋት አልተቻለም።'
+    });
+
+   }
+
+   res.json({
+    ok:true,
+    round:r.rows[0]
+   });
+
+  }catch(e){
+
+   console.error(e);
+
+   res.status(503).json({
+    error:'ዙሩን መዝጋት አልተቻለም።'
+   });
+
+  }
+
+ }
+);
+
+
+/* =========================
+   ADMIN ROUND DETAILS
+========================= */
+
+app.get(
+ '/api/admin/rounds/:id',
+ requireAdmin,
+ async(req,res)=>{
+
+  try{
+
+   const r=
+    await getRound(
+     req.params.id
+    );
+
+   if(!r){
+
+    return res.status(404).json({
+     error:'ዙሩ አልተገኘም።'
+    });
+
+   }
+
+   const t=await pool.query(
+    `SELECT
+      t.id,
+      t.number,
+      t.status,
+      t.created_at,
+      t.paid_at,
+      u.name,
+      u.phone
+     FROM tickets t
+     JOIN users u
+      ON u.id=t.user_id
+     WHERE t.round_id=$1
+     ORDER BY t.created_at ASC`,
+    [r.id]
+   );
+
+   const w=await pool.query(
+    `SELECT
+      place,
+      place_label,
+      number,
+      prize
+     FROM winners
+     WHERE round_id=$1
+     ORDER BY place`,
+    [r.id]
+   );
+
+   res.json({
+    round:r,
+    tickets:t.rows,
+    winners:w.rows
+   });
+
+  }catch(e){
+
+   console.error(e);
+
+   res.status(503).json({
+    error:'Database connection failed'
+   });
+
+  }
+
+ }
+);
+
+
+/* =========================
+   CONFIRM PAYMENT
+========================= */
+
+app.post(
+ '/api/admin/confirm',
+ requireAdmin,
+ async(req,res)=>{
+
+  const roundId=
+   String(
+    req.body?.roundId||''
+   );
+
+  const number=
+   int(
+    req.body?.number
+   );
+
+  try{
+
+   const r=await pool.query(
+    `UPDATE tickets
+     SET
+      status='paid',
+      paid_at=NOW()
+     WHERE
+      round_id=$1
+      AND number=$2
+      AND status='pending'
+     RETURNING number,status`,
+    [
+     roundId,
+     number
+    ]
+   );
+
+   if(!r.rowCount){
+
+    return res.status(404).json({
+     error:'Pending ትኬቱ አልተገኘም።'
+    });
+
+   }
+
+   res.json({
+    ok:true,
+    ticket:r.rows[0]
+   });
+
+  }catch(e){
+
+   console.error(e);
+
+   res.status(503).json({
+    error:'ክፍያውን ማረጋገጥ አልተቻለም።'
+   });
+
+  }
+
+ }
+);
+
+
+/* =========================
+   RELEASE PAYMENT
+========================= */
+
+app.post(
+ '/api/admin/release',
+ requireAdmin,
+ async(req,res)=>{
+
+  try{
+
+   const r=await pool.query(
+    `DELETE FROM tickets
+     WHERE
+      round_id=$1
+      AND number=$2
+      AND status='pending'
+     RETURNING number`,
+    [
+     String(
+      req.body?.roundId||''
+     ),
+     int(
+      req.body?.number
+     )
+    ]
+   );
+
+   if(!r.rowCount){
+
+    return res.status(404).json({
+     error:'Pending ትኬቱ አልተገኘም።'
+    });
+
+   }
+
+   res.json({
+    ok:true
+   });
+
+  }catch(e){
+
+   console.error(e);
+
+   res.status(503).json({
+    error:'ትኬቱን መልቀቅ አልተቻለም።'
+   });
+
+  }
+
+ }
+);
+
+
+/* =========================
+   DRAW
+========================= */
+
+app.post(
+ '/api/admin/draw',
+ requireAdmin,
+ async(req,res)=>{
+
+  const id=
+   String(
+    req.body?.roundId||''
+   );
+
+  const c=
+   await pool.connect();
+
+  try{
+
+   await c.query(
+    'BEGIN'
+   );
+
+   await c.query(
+    'SELECT pg_advisory_xact_lock(hashtext($1))',
+    [id]
+   );
+
+   const r=
+    await getRound(
+     id,
+     c
+    );
+
+   if(!r){
+
+    await c.query(
+     'ROLLBACK'
+    );
+
+    return res.status(404).json({
+     error:'ዙሩ አልተገኘም።'
+    });
+
+   }
+
+   if(r.status!=='closed'){
+
+    await c.query(
+     'ROLLBACK'
+    );
+
+    return res.status(409).json({
+     error:'እጣ ለማውጣት መጀመሪያ ዙሩን ዝጉ።'
+    });
+
+   }
+
+   const ex=
+    await c.query(
+     'SELECT 1 FROM winners WHERE round_id=$1 LIMIT 1',
+     [id]
+    );
+
+   if(ex.rowCount){
+
+    await c.query(
+     'ROLLBACK'
+    );
+
+    return res.status(409).json({
+     error:'የዚህ ዙር እጣ አስቀድሞ ወጥቷል።'
+    });
+
+   }
+
+   const paid=
+    await c.query(
+     `SELECT
+       id,
+       number,
+       user_id
+      FROM tickets
+      WHERE
+       round_id=$1
+       AND status='paid'
+      ORDER BY random()
+      LIMIT $2`,
+     [
+      id,
+      Math.max(
+       1,
+       r.prizes.length
+      )
+     ]
+    );
+
+   if(
+    paid.rowCount<
+    r.prizes.length
+   ){
+
+    await c.query(
+     'ROLLBACK'
+    );
+
+    return res.status(400).json({
+     error:
+      `ለ${r.prizes.length} እጣ በቂ Paid ትኬት የለም።`
+    });
+
+   }
+
+   const labels=[
+    '1ኛ እጣ',
+    '2ኛ እጣ',
+    '3ኛ እጣ',
+    '4ኛ እጣ',
+    '5ኛ እጣ'
+   ];
+
+   const out=[];
+
+   for(
+    let i=0;
+    i<r.prizes.length;
+    i++
+   ){
+
+    const x=
+     paid.rows[i];
+
+    const label=
+     labels[i]||
+     `${i+1}ኛ እጣ`;
+
+    await c.query(
+     `INSERT INTO winners(
+       id,
+       round_id,
+       place,
+       place_label,
+       number,
+       ticket_id,
+       user_id,
+       prize
+      )
+      VALUES(
+       $1,$2,$3,$4,
+       $5,$6,$7,$8
+      )`,
+     [
+      crypto.randomUUID(),
+      id,
+      i+1,
+      label,
+      x.number,
+      x.id,
+      x.user_id,
+      Number(
+       r.prizes[i]
+      )
+     ]
+    );
+
+    out.push({
+     place:i+1,
+     place_label:label,
+     number:x.number,
+     prize:Number(
+      r.prizes[i]
+     )
+    });
+
+   }
+
+   await c.query(
+    `UPDATE rounds
+     SET
+      status='drawn',
+      drawn_at=NOW()
+     WHERE id=$1`,
+    [id]
+   );
+
+   await c.query(
+    'COMMIT'
+   );
+
+   res.json({
+    ok:true,
+    winners:out
+   });
+
+  }catch(e){
+
+   await c.query(
+    'ROLLBACK'
+   ).catch(()=>{});
+
+   console.error(e);
+
+   res.status(503).json({
+    error:'እጣውን ማውጣት አልተቻለም።'
+   });
+
+  }finally{
+
+   c.release();
+
+  }
+
+ }
+);
+
+
+/* =========================
+   ADMIN USERS
+========================= */
+
+app.get(
+ '/api/admin/users',
+ requireAdmin,
+ async(req,res)=>{
+
+  try{
+
+   const r=await pool.query(
+    `SELECT
+      u.id,
+      u.name,
+      u.phone,
+      u.created_at,
+      COUNT(t.id)::int AS tickets
+     FROM users u
+     LEFT JOIN tickets t
+      ON t.user_id=u.id
+     GROUP BY u.id
+     ORDER BY u.created_at DESC`
+   );
+
+   res.json({
+    users:r.rows
+   });
+
+  }catch(e){
+
+   console.error(e);
+
+   res.status(503).json({
+    error:'Database connection failed'
+   });
+
+  }
+
+ }
+);
+
+
+/* =========================
+   STATIC FILES
+========================= */
+
+app.use(
+ '/admin',
+ express.static(
+  path.join(
+   __dirname,
+   'admin'
+  )
+ )
+);
+
+app.use(
+ express.static(
+  path.join(
+   __dirname,
+   'public'
+  )
+ )
+);
+
+
+/* =========================
+   ROUTES
+========================= */
+
+app.get(
+ '/admin/*',
+ (req,res)=>
+  res.sendFile(
+   path.join(
+    __dirname,
+    'admin',
+    'index.html'
+   )
+  )
+);
+
+app.get(
+ '*',
+ (req,res)=>
+  res.sendFile(
+   path.join(
+    __dirname,
+    'public',
+    'index.html'
+   )
+  )
+);
+
+
+/* =========================
+   SERVER
+========================= */
+
+app.listen(
+ PORT,
+ '0.0.0.0',
+ ()=>{
+  console.log(
+   `Lottery V7 listening on ${PORT}`
+  );
+ }
+);
