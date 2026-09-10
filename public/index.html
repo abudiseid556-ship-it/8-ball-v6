@@ -3,515 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-
 <title>🎱 8 BALL እጣ</title>
-
 <style>
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-  -webkit-tap-highlight-color:transparent;
-}
-
-:root{
-  --blue:#075ddd;
-  --blue2:#13a8ff;
-  --dark:#06184b;
-  --gold:#f4bd20;
-  --bg:#f3f7fd;
-  --text:#102650;
-  --muted:#8190aa;
-  --white:#fff;
-}
-
-body{
-  margin:0;
-  background:#dfeaff;
-  font-family:
-    Arial,
-    "Noto Sans Ethiopic",
-    "Abyssinica SIL",
-    sans-serif;
-  color:var(--text);
-}
-
-button{
-  font-family:inherit;
-  cursor:pointer;
-}
-
-.app{
-  width:100%;
-  max-width:480px;
-  min-height:100vh;
-  margin:auto;
-  background:var(--bg);
-  position:relative;
-  overflow:hidden;
-}
-
-/* =========================================================
-   HEADER
-========================================================= */
-
-.topbar{
-  height:78px;
-  padding:13px 16px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  background:
-    linear-gradient(
-      135deg,
-      #06194d 0%,
-      #0757d5 55%,
-      #13a8ff 100%
-    );
-  color:var(--white);
-  border-bottom-left-radius:26px;
-  border-bottom-right-radius:26px;
-  box-shadow:0 8px 25px rgba(7,87,213,0.3);
-  position:relative;
-  z-index:10;
-}
-
-.brand{
-  display:flex;
-  align-items:center;
-  gap:11px;
-}
-
-.mini-ball{
-  width:44px;
-  height:44px;
-  border-radius:50%;
-  background:
-    radial-gradient(
-      circle at 32% 25%,
-      #444 0%,
-      #111 40%,
-      #000 80%
-    );
-  border:2.5px solid var(--gold);
-  box-shadow:
-    0 0 10px rgba(244,189,32,0.7),
-    inset -5px -6px 10px rgba(0,0,0,0.8);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  position:relative;
-}
-
-.mini-ball::after{
-  content:"";
-  width:20px;
-  height:20px;
-  background:var(--white);
-  border-radius:50%;
-  position:absolute;
-}
-
-.mini-ball span{
-  position:relative;
-  z-index:2;
-  font-size:15px;
-  font-weight:900;
-  color:#000;
-}
-
-.brand-text h1{
-  font-size:18px;
-  font-weight:900;
-  line-height:1.2;
-}
-
-.brand-text h1 span{
-  color:var(--gold);
-}
-
-.brand-text p{
-  font-size:10px;
-  opacity:0.9;
-  margin-top:2px;
-}
-
-.topbar-actions{
-  display:flex;
-  gap:8px;
-}
-
-.icon-btn{
-  width:38px;
-  height:38px;
-  border-radius:50%;
-  border:none;
-  background:rgba(255,255,255,0.18);
-  color:var(--white);
-  font-size:16px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  backdrop-filter:blur(5px);
-  position:relative;
-}
-
-.badge-dot{
-  position:absolute;
-  top:8px;
-  right:8px;
-  width:8px;
-  height:8px;
-  background:#ff3b30;
-  border-radius:50%;
-  border:2px solid #06194d;
-}
-
-/* =========================================================
-   CONTAINER / SCROLLABLE CONTENT
-========================================================= */
-
-.content{
-  padding:14px;
-  padding-bottom:90px;
-}
-
-/* =========================================================
-   SPECIAL ANNOUNCEMENT / COMING SOON BANNER
-========================================================= */
-
-.announcement-card {
-  background: linear-gradient(135deg, #ff9500 0%, #ff3b30 100%);
-  border-radius: 20px;
-  padding: 16px;
-  color: var(--white);
-  margin-bottom: 14px;
-  box-shadow: 0 8px 25px rgba(255, 59, 48, 0.3);
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.announcement-icon {
-  width: 50px;
-  height: 50px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26px;
-  flex-shrink: 0;
-  backdrop-filter: blur(5px);
-  border: 2px solid rgba(255, 255, 255, 0.4);
-}
-
-.announcement-content h3 {
-  font-size: 15px;
-  font-weight: 900;
-  margin-bottom: 3px;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.announcement-content h3 span.badge-soon {
-  background: var(--white);
-  color: #ff3b30;
-  font-size: 9px;
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.announcement-content p {
-  font-size: 12px;
-  opacity: 0.95;
-  line-height: 1.4;
-}
-
-.announcement-content p strong {
-  color: var(--gold);
-  font-size: 13px;
-}
-
-/* =========================================================
-   HERO BANNER
-========================================================= */
-
-.hero-banner{
-  background:
-    radial-gradient(
-      circle at 50% 30%,
-      #20a9ff 0%,
-      #0753d4 50%,
-      #051543 100%
-    );
-  border-radius:24px;
-  padding:22px 16px 20px;
-  text-align:center;
-  color:var(--white);
-  position:relative;
-  overflow:hidden;
-  box-shadow:0 12px 30px rgba(7,83,212,0.25);
-  margin-bottom:14px;
-}
-
-.hero-decor{
-  position:absolute;
-  top:-30px;
-  left:50%;
-  transform:translateX(-50%);
-  width:200px;
-  height:200px;
-  background:rgba(255,255,255,0.08);
-  border-radius:50%;
-  pointer-events:none;
-}
-
-.crown{
-  font-size:32px;
-  line-height:1;
-  margin-bottom:-6px;
-  filter:drop-shadow(0 3px 6px rgba(0,0,0,0.3));
-}
-
-.hero-pool{
-  width:120px;
-  height:120px;
-  margin:0 auto 12px;
-  border-radius:50%;
-  background:
-    radial-gradient(
-      circle at 30% 25%,
-      #555 0%,
-      #1a1a1a 45%,
-      #000 85%
-    );
-  border:4px solid var(--gold);
-  box-shadow:
-    0 0 20px rgba(244,189,32,0.6),
-    0 10px 25px rgba(0,0,0,0.4),
-    inset -10px -12px 18px rgba(0,0,0,0.9);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  position:relative;
-}
-
-.hero-pool::after{
-  content:"8";
-  width:52px;
-  height:52px;
-  background:var(--white);
-  border-radius:50%;
-  color:#000;
-  font-size:32px;
-  font-weight:900;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow:0 3px 8px rgba(0,0,0,0.4);
-}
-
-.floating-balls{
-  position:absolute;
-  width:100%;
-  height:100%;
-  top:0;
-  left:0;
-  pointer-events:none;
-}
-
-.f-ball{
-  position:absolute;
-  width:32px;
-  height:32px;
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:13px;
-  font-weight:bold;
-  color:#fff;
-  box-shadow:0 4px 10px rgba(0,0,0,0.3);
-}
-
-.fb-1{ top:20px; left:25px; background:linear-gradient(135deg,#ff3b30,#c00); }
-.fb-2{ top:30px; right:30px; background:linear-gradient(135deg,#34c759,#0a8024); }
-.fb-3{ bottom:25px; left:30px; background:linear-gradient(135deg,#ffcc00,#e59400); color:#000; }
-.fb-4{ bottom:20px; right:25px; background:linear-gradient(135deg,#00c7be,#007670); }
-
-.hero-banner h2{
-  font-size:20px;
-  font-weight:800;
-  margin-bottom:4px;
-}
-
-.hero-banner h2 span{
-  color:var(--gold);
-}
-
-.hero-banner p{
-  font-size:12px;
-  opacity:0.9;
-}
-
-/* =========================================================
-   CARDS & SECTIONS
-========================================================= */
-
-.card{
-  background:var(--white);
-  border-radius:20px;
-  padding:16px;
-  margin-bottom:14px;
-  box-shadow:0 6px 20px rgba(16,38,80,0.06);
-  border:1px solid rgba(7,87,213,0.06);
-}
-
-.card-title{
-  font-size:14px;
-  font-weight:800;
-  color:var(--text);
-  margin-bottom:12px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-
-/* PRIZE CARD */
-.prize-row{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-.prize-amount{
-  font-size:22px;
-  font-weight:900;
-  color:var(--blue);
-  background:linear-gradient(135deg,var(--blue),var(--blue2));
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
-
-.primary-btn{
-  background:linear-gradient(135deg,var(--blue),var(--blue2));
-  color:var(--white);
-  border:none;
-  border-radius:14px;
-  padding:12px 20px;
-  font-size:14px;
-  font-weight:bold;
-  box-shadow:0 6px 18px rgba(7,93,221,0.3);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  width:100%;
-  transition:transform 0.1s ease;
-}
-
-.primary-btn:active{
-  transform:scale(0.97);
-}
-
-/* NUMBER GRID */
-.ball-grid{
-  display:grid;
-  grid-template-columns:repeat(5, 1fr);
-  gap:8px;
-  margin-top:10px;
-}
-
-.num-ball{
-  aspect-ratio:1;
-  border-radius:50%;
-  background:linear-gradient(135deg,#e4efff,#c8dcff);
-  border:2px solid rgba(7,93,221,0.15);
-  color:var(--text);
-  font-size:15px;
-  font-weight:800;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  transition:all 0.15s ease;
-  cursor:pointer;
-}
-
-.num-ball.selected{
-  background:linear-gradient(135deg,var(--gold),#ff9500);
-  color:#fff;
-  border-color:#fff;
-  box-shadow:0 4px 12px rgba(244,189,32,0.5);
-  transform:scale(1.05);
-}
-
-.num-ball.taken{
-  background:#e2e8f0;
-  color:#94a3b8;
-  border-color:transparent;
-  cursor:not-allowed;
-  opacity:0.6;
-}
-
-/* =========================================================
-   BOTTOM NAVIGATION
-========================================================= */
-
-.bottom-nav{
-  position:fixed;
-  bottom:0;
-  left:50%;
-  transform:translateX(-50%);
-  width:100%;
-  max-width:480px;
-  background:rgba(255,255,255,0.92);
-  backdrop-filter:blur(15px);
-  border-top:1px solid rgba(7,87,213,0.1);
-  display:flex;
-  justify-content:space-around;
-  padding:8px 6px 12px;
-  z-index:100;
-  box-shadow:0 -6px 20px rgba(16,38,80,0.06);
-}
-
-.nav-item{
-  text-decoration:none;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:3px;
-  color:var(--muted);
-  font-size:10px;
-  font-weight:700;
-  flex:1;
-}
-
-.nav-item span.icon{
-  font-size:20px;
-  line-height:1;
-}
-
-.nav-item.active{
-  color:var(--blue);
-}
-
-.nav-item.active span.icon{
-  transform:translateY(-2px);
-}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{--blue:#075ddd;--blue2:#13a8ff;--dark:#06184b;--gold:#f4bd20;--bg:#f3f7fd;--text:#102650;--muted:#8190aa;--white:#fff;}
+body{margin:0;background:#dfeaff;font-family:Arial, "Noto Sans Ethiopic", sans-serif;color:var(--text);}
+.app{width:100%;max-width:480px;min-height:100vh;margin:auto;background:var(--bg);position:relative;overflow:hidden;padding-bottom:90px;}
+.topbar{height:78px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg, #06194d 0%, #0757d5 55%, #13a8ff 100%);color:var(--white);border-bottom-left-radius:26px;border-bottom-right-radius:26px;box-shadow:0 8px 25px rgba(7,87,213,0.3);}
+.brand{display:flex;align-items:center;gap:11px;}
+.mini-ball{width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 32% 25%,#444 0%,#111 40%,#000 80%);border:2.5px solid var(--gold);display:flex;align-items:center;justify-content:center;position:relative;}
+.mini-ball span{position:relative;z-index:2;font-size:15px;font-weight:900;color:#fff;}
+.brand-text h1{font-size:18px;font-weight:900;}
+.brand-text h1 span{color:var(--gold);}
+.brand-text p{font-size:10px;opacity:0.9;}
+.content{padding:14px;}
+.announcement-card{background:linear-gradient(135deg, #ff9500 0%, #ff3b30 100%);border-radius:20px;padding:16px;color:var(--white);margin-bottom:14px;display:flex;align-items:center;gap:14px;}
+.card{background:var(--white);border-radius:20px;padding:16px;margin-bottom:14px;box-shadow:0 6px 20px rgba(16,38,80,0.06);}
+.card-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:12px;}
+.prize-amount{font-size:22px;font-weight:900;color:var(--blue);}
+.primary-btn{background:linear-gradient(135deg,var(--blue),var(--blue2));color:var(--white);border:none;border-radius:14px;padding:12px 20px;font-size:14px;font-weight:bold;width:100%;cursor:pointer;}
+.ball-grid{display:grid;grid-template-columns:repeat(5, 1fr);gap:8px;margin-top:10px;}
+.num-ball{aspect-ratio:1;border-radius:50%;background:linear-gradient(135deg,#e4efff,#c8dcff);border:2px solid rgba(7,93,221,0.15);color:var(--text);font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.num-ball.selected{background:linear-gradient(135deg,var(--gold),#ff9500);color:#fff;}
+.num-ball.taken{background:#e2e8f0;color:#94a3b8;cursor:not-allowed;}
 </style>
 </head>
 <body>
-
 <div class="app">
-
-  <!-- TOP BAR -->
   <header class="topbar">
     <div class="brand">
       <div class="mini-ball"><span>8</span></div>
@@ -520,120 +38,60 @@ button{
         <p id="userInfo">ዕድልዎን ይሞክሩ!</p>
       </div>
     </div>
-    <div class="topbar-actions">
-      <button class="icon-btn">
-        🔔
-        <span class="badge-dot"></span>
-      </button>
-      <button class="icon-btn">☰</button>
-    </div>
   </header>
-
-  <!-- MAIN SCROLLABLE AREA -->
   <div class="content">
-
-    <!-- SPECIAL ANNOUNCEMENT PRE-NOTICE -->
     <div class="announcement-card" id="specialNoticeCard">
-      <div class="announcement-icon">🎁</div>
-      <div class="announcement-content">
-        <h3>ልዩ እጣ በቅርብ ቀን! <span class="badge-soon">ቀድመው ይጠብቁ</span></h3>
-        <p id="noticeText">ከፍ ያለ ሽልማት የሚታወጅበት <strong>ልዩ እጣ</strong> ሊጀመር ነው። የዕድሉ ተሳታፊ ለመሆን ዛሬውኑ ይዘጋጁ!</p>
+      <div style="font-size:26px;">🎁</div>
+      <div>
+        <h3>ልዩ እጣ ማሳወቂያ</h3>
+        <p id="noticeText">መረጃ በመጫን ላይ...</p>
       </div>
     </div>
-
-    <!-- HERO BANNER -->
-    <div class="hero-banner">
-      <div class="hero-decor"></div>
-      
-      <div class="floating-balls">
-        <div class="f-ball fb-1">3</div>
-        <div class="f-ball fb-2">6</div>
-        <div class="f-ball fb-3">1</div>
-        <div class="f-ball fb-4">2</div>
-      </div>
-
-      <div class="crown">👑</div>
-      <div class="hero-pool"></div>
-      <h2>8 BALL <span>እጣ</span></h2>
-      <p>ዕድልዎን ይሞክሩ እና ታላቅ ሽልማት ያሸንፉ!</p>
-    </div>
-
-    <!-- PRIZE CARD -->
     <div class="card">
       <div class="card-title">🏆 ታላቅ ሽልማት</div>
-      <div class="prize-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
         <div class="prize-amount" id="prizeDisplay">ዙር በመጫን ላይ...</div>
-        <div style="font-size:12px; color:var(--muted);" id="roundLabel">ክፍት ዙር</div>
+        <div style="font-size:12px;color:var(--muted);" id="roundLabel">ክፍት ዙር</div>
       </div>
     </div>
-
-    <!-- NUMBER SELECTION CARD -->
     <div class="card">
       <div class="card-title">🎯 የቁጥር ምርጫ</div>
-      <div class="ball-grid" id="ballGrid">
-        <!-- በጃቫስክሪፕት በዳይናሚክ ይሞላል -->
-      </div>
+      <div class="ball-grid" id="ballGrid"></div>
       <div style="margin-top:14px;">
         <button class="primary-btn" id="takeTicketBtn">🎱 ትኬት ይግዙ እና ይመዝገቡ</button>
       </div>
     </div>
-
   </div>
-
-  <!-- BOTTOM NAVIGATION -->
-  <nav class="bottom-nav">
-    <a href="#" class="nav-item active">
-      <span class="icon">🏠</span>
-      <span>ዋና ገጽ</span>
-    </a>
-    <a href="#" class="nav-item">
-      <span class="icon">🎟️</span>
-      <span>ትኬቶች</span>
-    </a>
-    <a href="#" class="nav-item">
-      <span class="icon">🎁</span>
-      <span>ሽልማት</span>
-    </a>
-    <a href="#" class="nav-item">
-      <span class="icon">👤</span>
-      <span>መለያ</span>
-    </a>
-    <a href="#" class="nav-item">
-      <span class="icon">⚙️</span>
-      <span>ቅንብሮች</span>
-    </a>
-  </nav>
-
 </div>
-
 <script>
   let currentRoundId = null;
   let selectedNumber = null;
 
-  // የዛሬውን ዙር መረጃ ከሰቨር ማምጣት
-  async function loadTodayRound() {
+  async function loadData() {
     try {
+      const resNotice = await fetch('/api/announcements/special');
+      const noticeData = await resNotice.json();
+      if(noticeData.message) document.getElementById('noticeText').textContent = noticeData.message;
+
       const res = await fetch('/api/rounds/today');
       const data = await res.json();
-      if (data.rounds && data.rounds.length > 0) {
-        const round = data.rounds[0];
-        currentRoundId = round.id;
-        document.getElementById('prizeDisplay').textContent = `${round.ticket_price * (round.max_numbers || 25)} ETB`;
-        document.getElementById('roundLabel').textContent = `ዙር ${round.round_no} - ዋጋ: ${round.ticket_price} ETB`;
-        loadRoundState(round.id, round.max_numbers || 25);
+      const rounds = data.rounds || [];
+      const active = rounds.find(r => r.status === 'active') || rounds[0];
+
+      if (active) {
+        currentRoundId = active.id;
+        document.getElementById('prizeDisplay').textContent = `${active.ticket_price * (active.max_numbers || 25)} ETB`;
+        document.getElementById('roundLabel').textContent = `ዙር ${active.round_no} - ዋጋ: ${active.ticket_price} ETB`;
+        loadRoundState(active.id, active.max_numbers || 25);
       } else {
         document.getElementById('prizeDisplay').textContent = '0 ETB';
-        document.getElementById('roundLabel').textContent = 'ምንም ክፍት ዙር የለም';
         renderBalls(25, {});
       }
-    } catch (e) {
+    } catch(e) {
       console.error(e);
-      document.getElementById('prizeDisplay').textContent = 'ግንኙነት ተቋርጧል';
-      renderBalls(25, {});
     }
   }
 
-  // የዙሩን የተያዙ ቁጥሮች ማምጣት
   async function loadRoundState(roundId, maxNumbers) {
     try {
       const res = await fetch(`/api/rounds/${roundId}/state`);
@@ -644,16 +102,13 @@ button{
     }
   }
 
-  // ኳሶቹን መፍጠር እና ማቀናበር
   function renderBalls(max, takenMap) {
     const ballGrid = document.getElementById('ballGrid');
     ballGrid.innerHTML = '';
-
     for (let i = 1; i <= max; i++) {
       const ball = document.createElement('div');
       ball.className = 'num-ball';
       ball.textContent = i;
-
       if (takenMap[i]) {
         ball.classList.add('taken');
       } else {
@@ -665,70 +120,47 @@ button{
           selectedNumber = i;
         });
       }
-
       ballGrid.appendChild(ball);
     }
   }
 
-  // የቲኬት ግዢ / ቁጥር የመያዝ ተግባር
   document.getElementById('takeTicketBtn').addEventListener('click', async () => {
     if (!selectedNumber || !currentRoundId) {
       alert('እባክዎ መጀመሪያ ከሰሌዳው ላይ ቁጥር ይምረጡ!');
       return;
     }
-
-    let token = localStorage.getItem('token') || '';
+    let token = localStorage.getItem('token');
     if (!token) {
-      const phone = prompt('ስልክ ቁጥርዎን ያስገቡ (10 ዲጂት):');
+      const phone = prompt('ስልክ ቁጥርዎን ያስገቡ:');
       const name = prompt('ስምዎን ያስገቡ:');
       if (!phone || !name) return;
-
-      try {
-        const regRes = await fetch('/api/users/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, phone })
-        });
-        const regData = await regRes.json();
-        if (regData.token) {
-          localStorage.setItem('token', regData.token);
-          token = regData.token;
-          document.getElementById('userInfo').textContent = name;
-        } else {
-          alert(regData.error || 'ምዝገባ አልተሳካም');
-          return;
-        }
-      } catch (e) {
-        alert('ሰቨር ማግኘት አልተቻለም');
-        return;
-      }
+      const regRes = await fetch('/api/users/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone })
+      });
+      const regData = await regRes.json();
+      token = regData.token;
+      localStorage.setItem('token', token);
+      document.getElementById('userInfo').textContent = name;
     }
 
-    try {
-      const res = await fetch('/api/take', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ roundId: currentRoundId, number: selectedNumber })
-      });
-      const data = await res.json();
-      if (data.ok) {
-        alert(`ቁጥር ${selectedNumber} በስኬት ተይዟል!`);
-        selectedNumber = null;
-        loadTodayRound();
-      } else {
-        alert(data.error || 'ቁጥሩን መያዝ አልተቻለም');
-      }
-    } catch (e) {
-      alert('ስህተት ተፈጥሯል');
+    const res = await fetch('/api/take', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roundId: currentRoundId, number: selectedNumber })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      alert(`ቁጥር ${selectedNumber} በስኬት ተይዟል!`);
+      selectedNumber = null;
+      loadData();
+    } else {
+      alert(data.error || 'መያዝ አልተቻለም');
     }
   });
 
-  loadTodayRound();
+  loadData();
 </script>
-
 </body>
 </html>
-
