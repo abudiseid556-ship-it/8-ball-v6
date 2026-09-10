@@ -1,0 +1,5 @@
+8 BALL LOTTERY V7 — FULL PREMIUM
+User App: premium unified graphic
+Backend/Admin/Database: preserved from V7
+
+IMPORTANT: upload the contents of lottery_v6/ to the GitHub repository root; do not upload the ZIP as the app itself.
