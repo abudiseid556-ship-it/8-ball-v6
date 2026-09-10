@@ -1,70 +1,206 @@
-/* የተሻሻለ የሰማያዊ ገጽታ እና ግራፊክስ ዲዛይን */
-body {
-  background: linear-gradient(180deg, #0047ff 0%, #002288 50%, #001144 100%);
-  color: #ffffff;
-  font-family: 'SF Pro Display', -apple-system, sans-serif;
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
 
-/* የላይኛው ራስጌ (Header) */
-.app-header {
-  background: rgba(0, 30, 120, 0.6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  padding: 16px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+<!DOCTYPE html>
+<html lang="am">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>8 BALL ሎተሪ</title>
+  <style>
+    /* የተሻሻለ የሰማያዊ ገጽታ እና ግራፊክስ ዲዛይን */
+    body {
+      background: linear-gradient(180deg, #0047ff 0%, #002288 50%, #001144 100%);
+      color: #ffffff;
+      font-family: 'SF Pro Display', -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 70px;
+    }
 
-/* የመስታወት ካርዶች (Glass Cards) */
-.glass-box {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 24px;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-  padding: 20px;
-  margin: 12px 16px;
-}
+    /* የላይኛው ራስጌ (Header) */
+    .app-header {
+      background: rgba(0, 30, 120, 0.6);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-/* የታችኛው ማውጫ (Bottom Navigation Bar) */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 15, 50, 0.95);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-  backdrop-filter: blur(20px);
-  z-index: 1000;
-}
+    .container {
+      padding: 16px;
+      flex: 1;
+      max-width: 500px;
+      margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
+    }
 
-.nav-item {
-  color: #94a3b8;
-  font-size: 12px;
-  text-align: center;
-  text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
+    /* የመስታወት ካርዶች (Glass Cards) */
+    .glass-box {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 24px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
 
-.nav-item.active {
-  color: #ffffff;
-}
+    /* የኳስ ምርጫ ፍርግርግ */
+    .ball-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
 
-.nav-item.active .nav-icon-bg {
-  background: #0052ff;
-  border-radius: 16px;
-  padding: 6px 16px;
-  box-shadow: 0 4px 12px rgba(0, 82, 255, 0.4);
-}
+    .ball-item {
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #3b82f6 0%, #1d4ed8 70%, #0f172a 100%);
+      box-shadow: inset -3px -3px 8px rgba(0, 0, 0, 0.6), 0 4px 10px rgba(59, 130, 246, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      color: #ffffff;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s ease;
+    }
+
+    .ball-item:active {
+      transform: scale(0.92);
+    }
+
+    /* የተመረጠች ኳስ (Selected State) */
+    .ball-item.selected {
+      transform: scale(1.1);
+      background: radial-gradient(circle at 30% 30%, #fbbf24 0%, #d97706 70%, #78350f 100%);
+      box-shadow: inset -3px -3px 8px rgba(0, 0, 0, 0.6), 0 0 15px rgba(251, 191, 36, 0.8);
+      border: 2px solid #ffffff;
+    }
+
+    /* አዝራር (Action Button) */
+    .action-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 16px;
+      border: none;
+      border-radius: 30px;
+      padding: 16px;
+      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+      cursor: pointer;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    /* የታችኛው ማውጫ (Bottom Navigation Bar) */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 15, 50, 0.95);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      backdrop-filter: blur(20px);
+      z-index: 1000;
+    }
+
+    .nav-item {
+      color: #94a3b8;
+      font-size: 11px;
+      text-align: center;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .nav-item.active {
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div style="font-weight: bold; font-size: 18px;">8 BALL ሎተሪ</div>
+    <div id="user-info" style="font-size: 14px; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px;">አጥማየ</div>
+  </header>
+
+  <div class="container">
+    <!-- የሽልማት ክፍል -->
+    <div class="glass-box">
+      <h3 style="margin-top:0;">🏆 ታላቅ ሽልማት</h3>
+      <p style="margin-bottom:0; font-size: 20px; font-weight: bold; color: #ffd700;">200,000 ETB</p>
+    </div>
+
+    <!-- የኳስ ምርጫ ክፍል -->
+    <div class="glass-box">
+      <h3 style="margin-top:0;">🎯 ቁጥር ይምረጡ (እስከ 5)</h3>
+      <div class="ball-grid" id="ballGrid"></div>
+    </div>
+
+    <button class="action-btn" id="takeTicketBtn">🎯 ትኬት ይግዙ</button>
+  </div>
+
+  <!-- የታችኛው ናቪጌሽን -->
+  <nav class="bottom-nav">
+    <a href="#" class="nav-item active">🏠 <span>ዋና ገጽ</span></a>
+    <a href="#" class="nav-item">🎟️ <span>ትኬቶች</span></a>
+    <a href="#" class="nav-item">🎁 <span>ሽልማት</span></a>
+    <a href="#" class="nav-item">👤 <span>መለያ</span></a>
+    <a href="#" class="nav-item">⚙️ <span>ቅንብሮች</span></a>
+  </nav>
+
+  <script>
+    // ኳሶችን በዲዛይን መፍጠር እና ክሊክ እንዲያደርጉ ማድረግ
+    const ballGrid = document.getElementById('ballGrid');
+    const selectedBalls = new Set();
+    const MAX_SELECTION = 5;
+
+    for (let i = 1; i <= 25; i++) {
+      const ball = document.createElement('div');
+      ball.className = 'ball-item';
+      ball.textContent = i;
+      
+      ball.addEventListener('click', () => {
+        if (selectedBalls.has(i)) {
+          selectedBalls.delete(i);
+          ball.classList.remove('selected');
+        } else {
+          if (selectedBalls.size >= MAX_SELECTION) {
+            alert(`እባክዎ እስከ ${MAX_SELECTION} ብቻ ይምረጡ!`);
+            return;
+          }
+          selectedBalls.add(i);
+          ball.classList.add('selected');
+        }
+      });
+
+      ballGrid.appendChild(ball);
+    }
+
+    // የግዢ ቁልፍ ክስተት
+    document.getElementById('takeTicketBtn').addEventListener('click', () => {
+      if (selectedBalls.size === 0) {
+        alert('እባክዎ መጀመሪያ ኳሶችን ይምረጡ!');
+        return;
+      }
+      alert(`የተመረጡት ቁጥሮች: ${Array.from(selectedBalls).join(', ')} - ተይዟል!`);
+    });
+  </script>
+</body>
+</html>
