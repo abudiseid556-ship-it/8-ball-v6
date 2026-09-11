@@ -96,7 +96,13 @@ app.post('/api/admin/rounds/close/:id', verifyAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/admin/rounds/winners', verifyAdmin, (req, res) => {
+const path = require('path');
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});pp.post('/api/admin/rounds/winners', verifyAdmin, (req, res) => {
   const { roundId, firstWinner, secondWinner, thirdWinner } = req.body;
   rounds.forEach(r => {
     if (r.id === roundId) {
