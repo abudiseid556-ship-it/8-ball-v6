@@ -1,166 +1,122 @@
- <!DOCTYPE html>
-<html lang="am">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>🎱 8 BALL እጣ</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-:root{--blue:#075ddd;--blue2:#13a8ff;--dark:#06184b;--gold:#f4bd20;--bg:#f3f7fd;--text:#102650;--muted:#8190aa;--white:#fff;}
-body{margin:0;background:#dfeaff;font-family:Arial, "Noto Sans Ethiopic", sans-serif;color:var(--text);}
-.app{width:100%;max-width:480px;min-height:100vh;margin:auto;background:var(--bg);position:relative;overflow:hidden;padding-bottom:90px;}
-.topbar{height:78px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg, #06194d 0%, #0757d5 55%, #13a8ff 100%);color:var(--white);border-bottom-left-radius:26px;border-bottom-right-radius:26px;box-shadow:0 8px 25px rgba(7,87,213,0.3);}
-.brand{display:flex;align-items:center;gap:11px;}
-.mini-ball{width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 32% 25%,#444 0%,#111 40%,#000 80%);border:2.5px solid var(--gold);display:flex;align-items:center;justify-content:center;position:relative;}
-.mini-ball span{position:relative;z-index:2;font-size:15px;font-weight:900;color:#fff;}
-.brand-text h1{font-size:18px;font-weight:900;}
-.brand-text h1 span{color:var(--gold);}
-.brand-text p{font-size:10px;opacity:0.9;}
-.content{padding:14px;}
-.announcement-card{background:linear-gradient(135deg, #ff9500 0%, #ff3b30 100%);border-radius:20px;padding:16px;color:var(--white);margin-bottom:14px;display:flex;align-items:center;gap:14px;}
-.card{background:var(--white);border-radius:20px;padding:16px;margin-bottom:14px;box-shadow:0 6px 20px rgba(16,38,80,0.06);}
-.card-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:12px;}
-.prize-amount{font-size:22px;font-weight:900;color:var(--blue);}
-.primary-btn{background:linear-gradient(135deg,var(--blue),var(--blue2));color:var(--white);border:none;border-radius:14px;padding:12px 20px;font-size:14px;font-weight:bold;width:100%;cursor:pointer;}
-.ball-grid{display:grid;grid-template-columns:repeat(5, 1fr);gap:8px;margin-top:10px;}
-.num-ball{aspect-ratio:1;border-radius:50%;background:linear-gradient(135deg,#e4efff,#c8dcff);border:2px solid rgba(7,93,221,0.15);color:var(--text);font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;}
-.num-ball.selected{background:linear-gradient(135deg,var(--gold),#ff9500);color:#fff;}
-.num-ball.taken{background:#e2e8f0;color:#94a3b8;cursor:not-allowed;}
-</style>
-</head>
-<body>
-<div class="app">
-  <header class="topbar">
-    <div class="brand">
-      <div class="mini-ball"><span>8</span></div>
-      <div class="brand-text">
-        <h1>8 BALL <span>እጣ</span></h1>
-        <p id="userInfo">ዕድልዎን ይሞክሩ!</p>
-      </div>
-    </div>
-  </header>
-  <div class="content">
-    <div class="announcement-card" id="specialNoticeCard">
-      <div style="font-size:26px;">🎁</div>
-      <div>
-        <h3>ልዩ እጣ ማሳወቂያ</h3>
-        <p id="noticeText">መረጃ በመጫን ላይ...</p>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">🏆 ታላቅ ሽልማት</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div class="prize-amount" id="prizeDisplay">ዙር በመጫን ላይ...</div>
-        <div style="font-size:12px;color:var(--muted);" id="roundLabel">ክፍት ዙር</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">🎯 የቁጥር ምርጫ</div>
-      <div class="ball-grid" id="ballGrid"></div>
-      <div style="margin-top:14px;">
-        <button class="primary-btn" id="takeTicketBtn">🎱 ትኬት ይግዙ እና ይመዝገቡ</button>
-      </div>
-    </div>
-  </div>
-</div>
-<script>
-  let currentRoundId = null;
-  let selectedNumber = null;
+const express = require('express');
+const cors = require('cors');
+const app = express();
 
-  async function loadData() {
-    try {
-      const resNotice = await fetch('/api/announcements/special');
-      const noticeData = await resNotice.json();
-      if(noticeData.message) document.getElementById('noticeText').textContent = noticeData.message;
+app.use(express.json());
+app.use(cors());
 
-      const res = await fetch('/api/rounds/today');
-      const data = await res.json();
-      const rounds = data.rounds || [];
-      const active = rounds.find(r => r.status === 'active') || rounds[0];
+// መረጃዎች (In-Memory Data)
+let rounds = [
+  { id: 'round_1', round_no: 1, ticket_price: 200, max_numbers: 25, status: 'active', first_winner: '', second_winner: '', third_winner: '' }
+];
+let takenNumbers = {
+  'round_1': { 3: true, 7: true }
+};
+let specialNotice = {
+  active: true,
+  message: 'ከፍ ያለ ሽልማት የሚታወጅበት ልዩ እጣ ሊጀመር ነው። የዕድሉ ተሳታፊ ለመሆን ዛሬውኑ ይዘጋጁ!'
+};
 
-      if (active) {
-        currentRoundId = active.id;
-        document.getElementById('prizeDisplay').textContent = `${active.ticket_price * (active.max_numbers || 25)} ETB`;
-        document.getElementById('roundLabel').textContent = `ዙር ${active.round_no} - ዋጋ: ${active.ticket_price} ETB`;
-        loadRoundState(active.id, active.max_numbers || 25);
-      } else {
-        document.getElementById('prizeDisplay').textContent = '0 ETB';
-        renderBalls(25, {});
-      }
-    } catch(e) {
-      console.error(e);
-    }
+// ፐብሊክ ኤፒአይዎች
+app.get('/api/rounds/today', (req, res) => {
+  const activeRounds = rounds.filter(r => r.status === 'active' || r.status === 'pending');
+  res.json({ rounds: activeRounds.length > 0 ? activeRounds : rounds });
+});
+
+app.get('/api/rounds/:id/state', (req, res) => {
+  const roundId = req.params.id;
+  res.json({ taken: takenNumbers[roundId] || {} });
+});
+
+app.post('/api/users/register', (req, res) => {
+  const { name, phone } = req.body;
+  if (!name || !phone) return res.status(400).json({ error: 'ስም እና ስልክ ቁጥር ያስፈልጋል' });
+  res.json({ token: 'user-token-' + phone, name });
+});
+
+app.post('/api/take', (req, res) => {
+  const { roundId, number } = req.body;
+  if (!takenNumbers[roundId]) takenNumbers[roundId] = {};
+  if (takenNumbers[roundId][number]) return res.status(400).json({ error: 'ይህ ቁጥር უკვე ተይዟል!' });
+  takenNumbers[roundId][number] = true;
+  res.json({ ok: true });
+});
+
+app.get('/api/announcements/special', (req, res) => {
+  res.json(specialNotice);
+});
+
+// አድሚን ኤፒአይዎች
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body;
+  if (password === 'admin123' || password === '1234') {
+    return res.json({ ok: true, token: 'admin-secret-token-123' });
   }
+  res.status(401).json({ ok: false, error: 'የተሳሳተ የይለፍ ቃል!' });
+});
 
-  async function loadRoundState(roundId, maxNumbers) {
-    try {
-      const res = await fetch(`/api/rounds/${roundId}/state`);
-      const data = await res.json();
-      renderBalls(maxNumbers, data.taken || {});
-    } catch (e) {
-      renderBalls(25, {});
-    }
+const verifyAdmin = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  if (authHeader && authHeader.includes('admin-secret-token-123')) {
+    next();
+  } else {
+    res.status(403).json({ ok: false, error: 'ፈቃድ የለዎትም!' });
   }
+};
 
-  function renderBalls(max, takenMap) {
-    const ballGrid = document.getElementById('ballGrid');
-    ballGrid.innerHTML = '';
-    for (let i = 1; i <= max; i++) {
-      const ball = document.createElement('div');
-      ball.className = 'num-ball';
-      ball.textContent = i;
-      if (takenMap[i]) {
-        ball.classList.add('taken');
-      } else {
-        ball.addEventListener('click', () => {
-          document.querySelectorAll('.num-ball').forEach(b => {
-            if (!b.classList.contains('taken')) b.classList.remove('selected');
-          });
-          ball.classList.add('selected');
-          selectedNumber = i;
-        });
-      }
-      ballGrid.appendChild(ball);
-    }
-  }
+app.get('/api/admin/rounds', verifyAdmin, (req, res) => {
+  res.json({ rounds });
+});
 
-  document.getElementById('takeTicketBtn').addEventListener('click', async () => {
-    if (!selectedNumber || !currentRoundId) {
-      alert('እባክዎ መጀመሪያ ከሰሌዳው ላይ ቁጥር ይምረጡ!');
-      return;
-    }
-    let token = localStorage.getItem('token');
-    if (!token) {
-      const phone = prompt('ስልክ ቁጥርዎን ያስገቡ:');
-      const name = prompt('ስምዎን ያስገቡ:');
-      if (!phone || !name) return;
-      const regRes = await fetch('/api/users/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone })
-      });
-      const regData = await regRes.json();
-      token = regData.token;
-      localStorage.setItem('token', token);
-      document.getElementById('userInfo').textContent = name;
-    }
+app.post('/api/admin/rounds', verifyAdmin, (req, res) => {
+  const { round_no, ticket_price, max_numbers } = req.body;
+  const newRound = {
+    id: 'round_' + Date.now(),
+    round_no: parseInt(round_no) || (rounds.length + 1),
+    ticket_price: parseFloat(ticket_price) || 200,
+    max_numbers: parseInt(max_numbers) || 25,
+    status: 'pending',
+    first_winner: '',
+    second_winner: '',
+    third_winner: ''
+  };
+  rounds.unshift(newRound);
+  res.json({ ok: true, round: newRound });
+});
 
-    const res = await fetch('/api/take', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roundId: currentRoundId, number: selectedNumber })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      alert(`ቁጥር ${selectedNumber} በስኬት ተይዟል!`);
-      selectedNumber = null;
-      loadData();
-    } else {
-      alert(data.error || 'መያዝ አልተቻለም');
+app.post('/api/admin/rounds/start/:id', verifyAdmin, (req, res) => {
+  const roundId = req.params.id;
+  rounds.forEach(r => { if (r.id === roundId) r.status = 'active'; });
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/rounds/close/:id', verifyAdmin, (req, res) => {
+  const roundId = req.params.id;
+  rounds.forEach(r => { if (r.id === roundId) r.status = 'closed'; });
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/rounds/winners', verifyAdmin, (req, res) => {
+  const { roundId, firstWinner, secondWinner, thirdWinner } = req.body;
+  rounds.forEach(r => {
+    if (r.id === roundId) {
+      r.first_winner = firstWinner || '';
+      r.second_winner = secondWinner || '';
+      r.third_winner = thirdWinner || '';
+      r.status = 'completed';
     }
   });
+  res.json({ ok: true });
+});
 
-  loadData();
-</script>
-</body>
-</html>
+app.post('/api/admin/announcements/special', verifyAdmin, (req, res) => {
+  const { active, message } = req.body;
+  specialNotice = { active, message };
+  res.json({ ok: true });
+});
+
+// Render የሚሰጠውን ፖርት በራስ-ሰር እንዲቀበል ማድረግ
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}`);
+});
