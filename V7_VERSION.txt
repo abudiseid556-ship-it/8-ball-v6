@@ -1,5 +1,7 @@
-8 BALL LOTTERY V7 — FULL PREMIUM
-User App: premium unified graphic
-Backend/Admin/Database: preserved from V7
-
-IMPORTANT: upload the contents of lottery_v6/ to the GitHub repository root; do not upload the ZIP as the app itself.
+8 BALL LOTTERY V7 — UNIFIED SECURE MASTER
+User App: Premium mobile-first lottery UI
+Admin: Master + Admin A + Admin B with server-side permissions
+Admin A: rounds create/configure/open/close + payments/users/tickets
+Admin B: draw/winners/reports + round read access
+Master: full access
+Security: JWT role enforcement, rate limiting, Helmet, DB constraints, ticket uniqueness, draw transaction lock, audit logs

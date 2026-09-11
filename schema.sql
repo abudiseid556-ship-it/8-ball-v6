@@ -16,6 +16,15 @@ CREATE TABLE IF NOT EXISTS rounds (
   UNIQUE(draw_date,round_no)
 );
 
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(80) NOT NULL,
+  phone VARCHAR(20) NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS users_name_idx ON users(name);
+CREATE INDEX IF NOT EXISTS users_phone_idx ON users(phone);
+
 -- If this is a new database, create the modern ticket/winner tables directly.
 CREATE TABLE IF NOT EXISTS tickets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -45,3 +54,17 @@ CREATE TABLE IF NOT EXISTS winners (
 );
 CREATE INDEX IF NOT EXISTS winners_round_idx ON winners(round_id);
 CREATE INDEX IF NOT EXISTS winners_user_idx ON winners(user_id);
+
+CREATE TABLE IF NOT EXISTS announcements (id uuid PRIMARY KEY, message text NOT NULL, active boolean NOT NULL DEFAULT true, priority int NOT NULL DEFAULT 0, created_at timestamptz NOT NULL DEFAULT NOW(), expires_at timestamptz);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_role VARCHAR(20) NOT NULL CHECK (admin_role IN ('master','admin_a','admin_b')),
+  action VARCHAR(80) NOT NULL,
+  target_type VARCHAR(40),
+  target_id TEXT,
+  details JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS audit_logs_created_idx ON audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS audit_logs_role_idx ON audit_logs(admin_role);
