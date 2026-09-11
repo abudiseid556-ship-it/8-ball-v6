@@ -115,8 +115,8 @@ app.post('/api/admin/announcements/special', verifyAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-// Render የሚሰጠውን ፖርት በራስ-ሰር እንዲቀበል ማድረግ
-const PORT = process.env.PORT || 3000;
+// Render የሚሰጠውን ፖርት በራስ-ሰር እንዲቀበል (ለ Render 10000 ፖርትም ጭምር የሚሰራ)
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
