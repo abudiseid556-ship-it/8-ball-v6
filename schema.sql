@@ -61,18 +61,6 @@ CREATE TABLE IF NOT EXISTS announcements (
   expires_at TIMESTAMPTZ
 );
 
-CREATE TABLE IF NOT EXISTS user_notifications (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  message TEXT NOT NULL,
-  data JSONB NOT NULL DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  expires_at TIMESTAMPTZ,
-  read_at TIMESTAMPTZ
-);
-CREATE INDEX IF NOT EXISTS user_notifications_user_idx ON user_notifications(user_id,created_at DESC);
-
 CREATE TABLE IF NOT EXISTS push_subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -119,3 +107,6 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS audit_logs_created_idx ON audit_logs(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS in_app_notifications(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),title text NOT NULL DEFAULT '🎱 8 BALL እጣ',message text NOT NULL,audience text NOT NULL DEFAULT 'all',round_id uuid,created_at timestamptz NOT NULL DEFAULT NOW(),expires_at timestamptz);
+CREATE INDEX IF NOT EXISTS idx_in_app_notifications_active ON in_app_notifications(expires_at,created_at DESC);
