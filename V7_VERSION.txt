@@ -1,2 +1,2 @@
-8 BALL እጣ V7 — FINAL SAFE BUILD
-Includes: Admin A/B dynamic permissions, Master Settings, Admin-authenticated announcements, public main-board Notice, round sync, ticket locking, payment states, draw/winner security, push/in-app notifications.
+8 BALL እጣ V7 — Stable consolidated build
+Advertisement + Notice separated; round ticket grouping; notification error hardening; announcements title compatibility.

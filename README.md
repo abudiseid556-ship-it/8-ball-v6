@@ -12,3 +12,6 @@
 - Admin can view user names and phone numbers.
 
 IMPORTANT: The current V6 database schema is not compatible with multiple rounds. Back up production data before migrating. For a clean/test database, run schema.sql. If the current database already contains important tickets, ask for a migration script rather than dropping tables.
+
+## Stability fix
+Advertisement inserts now always provide the announcements.title value and startup migration adds/normalizes that column for existing databases.
