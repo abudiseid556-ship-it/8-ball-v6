@@ -1,5 +1,12 @@
--- V7 schema. Run this after backing up the current database.
+-- 8 BALL እጣ V7 production schema
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(80) NOT NULL,
+  phone VARCHAR(10) NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 CREATE TABLE IF NOT EXISTS rounds (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -16,16 +23,6 @@ CREATE TABLE IF NOT EXISTS rounds (
   UNIQUE(draw_date,round_no)
 );
 
-CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(80) NOT NULL,
-  phone VARCHAR(20) NOT NULL UNIQUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS users_name_idx ON users(name);
-CREATE INDEX IF NOT EXISTS users_phone_idx ON users(phone);
-
--- If this is a new database, create the modern ticket/winner tables directly.
 CREATE TABLE IF NOT EXISTS tickets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   round_id UUID NOT NULL REFERENCES rounds(id) ON DELETE CASCADE,
@@ -55,16 +52,58 @@ CREATE TABLE IF NOT EXISTS winners (
 CREATE INDEX IF NOT EXISTS winners_round_idx ON winners(round_id);
 CREATE INDEX IF NOT EXISTS winners_user_idx ON winners(user_id);
 
-CREATE TABLE IF NOT EXISTS announcements (id uuid PRIMARY KEY, message text NOT NULL, active boolean NOT NULL DEFAULT true, priority int NOT NULL DEFAULT 0, created_at timestamptz NOT NULL DEFAULT NOW(), expires_at timestamptz);
+CREATE TABLE IF NOT EXISTS announcements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  message TEXT NOT NULL CHECK (length(message) BETWEEN 1 AND 500),
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  priority INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NULL REFERENCES users(id) ON DELETE CASCADE,
+  endpoint TEXT UNIQUE NOT NULL,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  user_agent TEXT,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS notification_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  round_id UUID NOT NULL REFERENCES rounds(id) ON DELETE CASCADE,
+  event_key TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(round_id,event_key)
+);
+
+CREATE TABLE IF NOT EXISTS admin_permissions (
+  role TEXT NOT NULL,
+  permission TEXT NOT NULL,
+  enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY(role,permission),
+  CHECK(role IN ('admin_a','admin_b'))
+);
+
+INSERT INTO admin_permissions(role,permission,enabled) VALUES
+('admin_a','rounds.create',true),('admin_a','rounds.start',true),('admin_a','rounds.close',true),
+('admin_a','rounds.view',true),('admin_a','tickets.setup',true),('admin_a','payments.manage',true),('admin_a','notifications.manage',true),
+('admin_b','rounds.view',true),('admin_b','draw.manage',true),('admin_b','winners.view',true),('admin_b','reports.view',true),
+('admin_b','history.view',true),('admin_b','notifications.manage',true)
+ON CONFLICT(role,permission) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  admin_role VARCHAR(20) NOT NULL CHECK (admin_role IN ('master','admin_a','admin_b')),
-  action VARCHAR(80) NOT NULL,
-  target_type VARCHAR(40),
-  target_id TEXT,
-  details JSONB NOT NULL DEFAULT '{}'::jsonb,
+  actor_role TEXT NOT NULL,
+  action TEXT NOT NULL,
+  entity_type TEXT,
+  entity_id UUID,
+  details JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS audit_logs_created_idx ON audit_logs(created_at DESC);
-CREATE INDEX IF NOT EXISTS audit_logs_role_idx ON audit_logs(admin_role);

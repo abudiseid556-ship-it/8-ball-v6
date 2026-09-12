@@ -1,12 +1,14 @@
-# 8 BALL LOTTERY V7 — Unified Master Secure
+# Premium Lottery V7
 
-- User App: `/`
-- Admin App: `/admin`
-- Repository root is the application root.
-- Build: `npm install`
-- Start: `npm start`
-- Web Push dependency included: `web-push`
-- Web Push service worker: `public/sw.js`
-- Notifications are kept out of the main premium hero layout so they do not distort the visual design.
-- Admin permissions are enforced server-side.
-- Do not append `/admin` to `DATABASE_URL`; the database URL must point to the PostgreSQL database itself.
+- User app: `/`
+- Admin app: `/admin`
+- Same backend + Supabase/PostgreSQL
+- Admin creates any number of rounds, ticket count and ticket price.
+- No manual start/end time entry. Start and close timestamps are recorded automatically when buttons are pressed.
+- Prize amounts are configurable per round.
+- Ticket numbers are not fixed at 100; up to 1,000,000.
+- User app hides taken numbers from the available selector and refreshes every 4 seconds.
+- Alerts appear at 20 and 10 remaining tickets.
+- Admin can view user names and phone numbers.
+
+IMPORTANT: The current V6 database schema is not compatible with multiple rounds. Back up production data before migrating. For a clean/test database, run schema.sql. If the current database already contains important tickets, ask for a migration script rather than dropping tables.
