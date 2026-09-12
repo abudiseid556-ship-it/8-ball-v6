@@ -1,75 +1,129 @@
-const express=require('express');const path=require('path');const crypto=require('crypto');const jwt=require('jsonwebtoken');const helmet=require('helmet');const rateLimit=require('express-rate-limit');const {Pool}=require('pg');const webpush=require('web-push');
-const app=express();app.set('trust proxy',1);app.use(helmet({contentSecurityPolicy:false}));app.use(express.json({limit:'100kb'}));
-const PORT=Number(process.env.PORT||3000),DATABASE_URL=String(process.env.DATABASE_URL||'').trim(),JWT_SECRET=String(process.env.JWT_SECRET||''),ADMIN_PIN=String(process.env.ADMIN_PIN||'');
-const PAYMENT_INFO=String(process.env.PAYMENT_INFO||'የክፍያ መረጃ አሁን በአድሚን የሚዋቀር ነው።').trim();
-const VAPID_PUBLIC_KEY=String(process.env.VAPID_PUBLIC_KEY||'').trim(),VAPID_PRIVATE_KEY=String(process.env.VAPID_PRIVATE_KEY||'').trim(),VAPID_SUBJECT=String(process.env.VAPID_SUBJECT||'mailto:admin@example.com').trim();const PUSH_ENABLED=!!(VAPID_PUBLIC_KEY&&VAPID_PRIVATE_KEY);if(PUSH_ENABLED)webpush.setVapidDetails(VAPID_SUBJECT,VAPID_PUBLIC_KEY,VAPID_PRIVATE_KEY);
-if(!DATABASE_URL||!JWT_SECRET||!ADMIN_PIN){console.error('CONFIG_ERROR: Missing DATABASE_URL, JWT_SECRET or ADMIN_PIN');process.exit(1)}
-const pool=new Pool({connectionString:DATABASE_URL,ssl:process.env.DATABASE_SSL==='false'?false:{rejectUnauthorized:false},max:Number(process.env.DB_POOL_MAX||10),idleTimeoutMillis:30000,connectionTimeoutMillis:10000});pool.on('error',e=>console.error('DB_POOL_ERROR:',e.message));
-const authLimiter=rateLimit({windowMs:15*60*1000,max:100,standardHeaders:true,legacyHeaders:false});const adminLimiter=rateLimit({windowMs:15*60*1000,max:60,standardHeaders:true,legacyHeaders:false});
-function bearer(req){const h=req.headers.authorization||'';return h.startsWith('Bearer ')?h.slice(7):''}function signUser(u){return jwt.sign({sub:u.id,role:'user'},JWT_SECRET,{expiresIn:'30d'})}function signAdmin(role){return jwt.sign({role:'admin',adminRole:role},JWT_SECRET,{expiresIn:'30m'})}
-function adminRole(req){return req.auth?.adminRole||'master'}
-function requireAdminRoles(...roles){return (req,res,next)=>{requireAdmin(req,res,()=>{if(roles.includes(adminRole(req)))return next();res.status(403).json({error:'ይህን ተግባር ለመፈጸም በቂ የአድሚን ስልጣን የለዎትም።'})})}}
-const DEFAULT_PERMS={admin_a:['rounds.create','rounds.start','rounds.close','tickets.setup','payments.manage','notifications.manage'],admin_b:['rounds.view','draw.manage','winners.view','reports.view','history.view','notifications.manage'],master:['*']};
-async function hasPermission(role,perm){if(role==='master')return true;const r=await pool.query('SELECT enabled FROM admin_permissions WHERE role=$1 AND permission=$2',[role,perm]);return r.rowCount?r.rows[0].enabled:DEFAULT_PERMS[role]?.includes(perm)||false}
-function requireAdminPermission(perm){return (req,res,next)=>{requireAdmin(req,res,async()=>{try{if(await hasPermission(adminRole(req),perm))return next();return res.status(403).json({error:'ይህን ተግባር ለዚህ Admin ተፈቅዶ አይደለም።'})}catch(e){console.error(e);return res.status(503).json({error:'Permission ማረጋገጥ አልተቻለም።'})}})}}
+const express = require('express');
+const cors = require('cors');
+const app = express();
 
-function requireUser(req,res,next){try{const p=jwt.verify(bearer(req),JWT_SECRET);if(p.role!=='user'||!p.sub)throw 0;req.auth=p;next()}catch{res.status(401).json({error:'የመግቢያ ፍቃድ አልተገኘም።'})}}
-function requireAdmin(req,res,next){try{const p=jwt.verify(bearer(req),JWT_SECRET);if(p.role!=='admin')throw 0;req.auth=p;next()}catch{res.status(401).json({error:'የአድሚን ፍቃድ አልተገኘም።'})}}
-function validPhone(x){return /^\d{10}$/.test(String(x||''))}function int(x){return Number.isInteger(Number(x))?Number(x):NaN}
-async function getRound(id,client=pool){const r=await client.query('SELECT * FROM rounds WHERE id=$1',[id]);return r.rows[0]||null}
-async function pushToSubscriptions(subs,title,body,data={}){if(!PUSH_ENABLED||!subs.length)return{sent:0,failed:0};let sent=0,failed=0;await Promise.all(subs.map(async s=>{try{await webpush.sendNotification({endpoint:s.endpoint,keys:{p256dh:s.p256dh,auth:s.auth}},{title,body,data,icon:'/icon-192.png',badge:'/icon-192.png',tag:data.tag||'8ball-lottery'});sent++}catch(e){failed++;if(e.statusCode===404||e.statusCode===410)await pool.query('UPDATE push_subscriptions SET active=false WHERE id=$1',[s.id]).catch(()=>{})}}));return{sent,failed}}
-async function pushAudience(audience,roundId){let q='',params=[];switch(audience){case'all':q='SELECT * FROM push_subscriptions WHERE active=true';break;case'registered':q='SELECT * FROM push_subscriptions WHERE active=true AND user_id IS NOT NULL';break;case'recent':q="SELECT ps.* FROM push_subscriptions ps JOIN users u ON u.id=ps.user_id WHERE ps.active=true AND u.created_at>=NOW()-INTERVAL '7 days'";break;case'round_ticket':q="SELECT DISTINCT ps.* FROM push_subscriptions ps JOIN tickets t ON t.user_id=ps.user_id WHERE ps.active=true AND t.round_id=$1";params=[roundId];break;case'round_paid':q="SELECT DISTINCT ps.* FROM push_subscriptions ps JOIN tickets t ON t.user_id=ps.user_id WHERE ps.active=true AND t.round_id=$1 AND t.status='paid'";params=[roundId];break;case'round_pending':q="SELECT DISTINCT ps.* FROM push_subscriptions ps JOIN tickets t ON t.user_id=ps.user_id WHERE ps.active=true AND t.round_id=$1 AND t.status='pending'";params=[roundId];break;default:throw Error('የተሳታፊ ምርጫ አልታወቀም።')}return (await pool.query(q,params)).rows}
-async function sendAudienceNotification({audience='all',roundId=null,title='🎱 8 BALL እጣ',message,data={},inAppMinutes=1440}){const subs=await pushAudience(audience,roundId);const result=await pushToSubscriptions(subs,title,message,{...data,roundId});if(inAppMinutes>0)await pool.query(`INSERT INTO announcements(id,message,active,priority,created_at,expires_at) VALUES($1,$2,true,10,NOW(),NOW()+($3::text||' minutes')::interval)`,[crypto.randomUUID(),message,inAppMinutes]).catch(()=>{});return result}
-async function sendUserNotification(userId,title,message,data={}){const r=await pool.query('SELECT * FROM push_subscriptions WHERE active=true AND user_id=$1',[userId]);return pushToSubscriptions(r.rows,title,message,data)}
-async function recordEvent(roundId,eventKey){const r=await pool.query('INSERT INTO notification_events(id,round_id,event_key) VALUES($1,$2,$3) ON CONFLICT(round_id,event_key) DO NOTHING RETURNING id',[crypto.randomUUID(),roundId,eventKey]);return r.rowCount>0}
-async function maybeSendRoundAlert(roundId){const r=await pool.query("SELECT r.id,r.round_no,r.max_numbers,COUNT(t.id)::int sold FROM rounds r LEFT JOIN tickets t ON t.round_id=r.id WHERE r.id=$1 GROUP BY r.id",[roundId]);if(!r.rowCount)return;const x=r.rows[0],remaining=Math.max(0,Number(x.max_numbers)-Number(x.sold)),pct=Math.floor(Number(x.sold)*100/Number(x.max_numbers));let key='',message='';if(remaining===0){key='full';message=`🚨 የዙር #${x.round_no} ቁጥሮች ሁሉ ተሞልተዋል!`}else if(remaining<=10){key='remaining_10';message=`🔥 የዙር #${x.round_no} ${remaining} ቁጥሮች ብቻ ቀርተዋል!`}else if(remaining<=20){key='remaining_20';message=`⚠️ የዙር #${x.round_no} ${remaining} ቁጥሮች ብቻ ቀርተዋል!`}else if(pct>=50){key='half';message=`📣 የዙር #${x.round_no} ${pct}% ተሞልቷል። ${remaining} ቀርተዋል!`}if(key&&await recordEvent(roundId,key))await sendAudienceNotification({audience:'all',roundId,title:'🎱 8 BALL እጣ',message,inAppMinutes:1440})}
-app.get('/api/health',async(req,res)=>{try{await pool.query('SELECT 1');res.json({ok:true,database:true})}catch(e){console.error(e);res.status(503).json({ok:false,database:false})}});
-app.post('/api/users/register',authLimiter,async(req,res)=>{const name=String(req.body?.name||'').trim(),phone=String(req.body?.phone||'').trim();if(name.length<2||name.length>80)return res.status(400).json({error:'እባክዎ ትክክለኛ ስም ያስገቡ።'});if(!validPhone(phone))return res.status(400).json({error:'ስልክ ቁጥሩ 10 ዲጂት መሆን አለበት።'});try{let r=await pool.query('SELECT id,name,phone FROM users WHERE phone=$1',[phone]);let u;if(r.rowCount){u=r.rows[0];if(u.name!==name){r=await pool.query('UPDATE users SET name=$1 WHERE id=$2 RETURNING id,name,phone',[name,u.id]);u=r.rows[0]}}else{r=await pool.query('INSERT INTO users(id,name,phone) VALUES($1,$2,$3) RETURNING id,name,phone',[crypto.randomUUID(),name,phone]);u=r.rows[0]}res.json({user:u,token:signUser(u)})}catch(e){console.error(e);res.status(503).json({error:'አካውንት መክፈት አልተቻለም።'})}});
-app.get('/api/rounds/today',async(req,res)=>{try{const r=await pool.query("SELECT r.*,COUNT(t.id)::int AS taken_count FROM rounds r LEFT JOIN tickets t ON t.round_id=r.id WHERE r.draw_date=(NOW() AT TIME ZONE 'Africa/Addis_Ababa')::date GROUP BY r.id ORDER BY r.round_no");res.json({rounds:r.rows})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-app.get('/api/rounds/:id/state',async(req,res)=>{try{const r=await getRound(req.params.id);if(!r)return res.status(404).json({error:'ዙሩ አልተገኘም።'});const [t,w]=await Promise.all([pool.query('SELECT number,status FROM tickets WHERE round_id=$1 ORDER BY number',[r.id]),pool.query('SELECT place,place_label,number,prize FROM winners WHERE round_id=$1 ORDER BY place',[r.id])]);const taken={};t.rows.forEach(x=>taken[x.number]={status:x.status});res.json({round:r,taken,winners:w.rows})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-app.get('/api/me',requireUser,async(req,res)=>{try{const u=await pool.query('SELECT id,name,phone FROM users WHERE id=$1',[req.auth.sub]);if(!u.rowCount)return res.status(404).json({error:'አካውንቱ አልተገኘም።'});const t=await pool.query(`SELECT t.id,t.number,t.status,t.created_at,t.paid_at,r.id AS round_id,r.round_no,r.draw_date,r.ticket_price FROM tickets t JOIN rounds r ON r.id=t.round_id WHERE t.user_id=$1 ORDER BY r.draw_date DESC,r.round_no DESC,t.number`,[req.auth.sub]);res.json({user:u.rows[0],tickets:t.rows})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-app.get('/api/me/payment-info',requireUser,(req,res)=>res.json({paymentInfo:PAYMENT_INFO}));
-app.get('/api/push/public-key',(req,res)=>res.json({enabled:PUSH_ENABLED,publicKey:PUSH_ENABLED?VAPID_PUBLIC_KEY:null}));
-app.post('/api/push/subscribe',async(req,res)=>{const sub=req.body?.subscription||req.body;if(!sub?.endpoint||!sub?.keys?.p256dh||!sub?.keys?.auth)return res.status(400).json({error:'Push subscription መረጃ አልተሟላም።'});let userId=null;try{const p=jwt.verify(bearer(req),JWT_SECRET);if(p.role==='user')userId=p.sub}catch{}try{await pool.query(`INSERT INTO push_subscriptions(id,user_id,endpoint,p256dh,auth,user_agent,active,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,true,NOW(),NOW()) ON CONFLICT(endpoint) DO UPDATE SET user_id=COALESCE(EXCLUDED.user_id,push_subscriptions.user_id),p256dh=EXCLUDED.p256dh,auth=EXCLUDED.auth,user_agent=EXCLUDED.user_agent,active=true,updated_at=NOW()`,[crypto.randomUUID(),userId,sub.endpoint,sub.keys.p256dh,sub.keys.auth,String(req.headers['user-agent']||'')]);res.json({ok:true,enabled:PUSH_ENABLED})}catch(e){console.error(e);res.status(503).json({error:'Push ምዝገባ አልተሳካም።'})}});
-app.post('/api/push/unsubscribe',async(req,res)=>{try{await pool.query('UPDATE push_subscriptions SET active=false,updated_at=NOW() WHERE endpoint=$1',[String(req.body?.endpoint||'')]);res.json({ok:true})}catch(e){res.status(503).json({error:'Push ማቋረጥ አልተሳካም።'})}});
-app.get('/api/announcements',async(req,res)=>{try{const r=await pool.query(`SELECT id,message,priority,created_at,expires_at FROM announcements WHERE active=true AND (expires_at IS NULL OR expires_at>NOW()) ORDER BY priority DESC,created_at DESC LIMIT 20`);res.json({announcements:r.rows})}catch(e){console.error(e);res.status(503).json({error:'ማስታወቂያዎችን ማምጣት አልተቻለም።'})}});
-app.get('/api/me/notifications',requireUser,async(req,res)=>{try{const notes=[];const r=await pool.query("SELECT r.id,r.round_no,r.max_numbers,COUNT(t.id)::int AS sold FROM rounds r LEFT JOIN tickets t ON t.round_id=r.id WHERE r.status='open' AND r.draw_date=CURRENT_DATE GROUP BY r.id ORDER BY r.round_no LIMIT 1");if(r.rowCount){const x=r.rows[0],remaining=Math.max(0,Number(x.max_numbers)-Number(x.sold));if(remaining===0)notes.push({message:'🎉 ዙሩ ተሞልቷል።'});else if(remaining<=10)notes.push({message:`🔥 ${remaining} ትኬቶች ብቻ ቀርተዋል።`});else if(remaining<=20)notes.push({message:'⚡ ትኬቶች በፍጥነት እየሞሉ ነው።'});else if(Number(x.sold)>=Math.ceil(Number(x.max_numbers)*.5))notes.push({message:'📣 ዙሩ 50% በላይ ተሞልቷል።'})}const w=await pool.query(`SELECT w.place_label,w.number,w.prize,r.round_no FROM winners w JOIN rounds r ON r.id=w.round_id JOIN tickets t ON t.id=w.ticket_id WHERE w.user_id=$1 ORDER BY w.created_at DESC LIMIT 5`,[req.auth.sub]);w.rows.forEach(x=>notes.push({message:`🏆 እንኳን ደስ አለዎት! በዙር #${x.round_no} ${x.place_label} አሸንፈዋል — #${x.number} • ${Number(x.prize).toLocaleString()} ETB`}));const p=await pool.query("SELECT t.number,r.round_no,t.paid_at FROM tickets t JOIN rounds r ON r.id=t.round_id WHERE t.user_id=$1 AND t.status='paid' ORDER BY t.paid_at DESC LIMIT 5",[req.auth.sub]);p.rows.forEach(x=>notes.push({message:`🟢 #${x.number} የዙር #${x.round_no} ክፍያ ተረጋግጧል።`}));res.json({notifications:notes})}catch(e){console.error(e);res.status(503).json({error:'ማስታወቂያ ማምጣት አልተቻለም።'})}});
-app.post('/api/take',requireUser,async(req,res)=>{const roundId=String(req.body?.roundId||''),number=int(req.body?.number);if(!roundId||!Number.isInteger(number)||number<1)return res.status(400).json({error:'ትክክለኛ ዙርና ቁጥር ይምረጡ።'});const c=await pool.connect();try{await c.query('BEGIN');const r=await getRound(roundId,c);if(!r){await c.query('ROLLBACK');return res.status(404).json({error:'ዙሩ አልተገኘም።'})}if(r.status!=='open'){await c.query('ROLLBACK');return res.status(409).json({error:'ይህ ዙር ክፍት አይደለም።'})}if(number>r.max_numbers){await c.query('ROLLBACK');return res.status(400).json({error:`1 እስከ ${r.max_numbers} ያለ ቁጥር ይምረጡ።`})}const ins=await c.query(`INSERT INTO tickets(round_id,number,user_id,status) VALUES($1,$2,$3,'pending') ON CONFLICT(round_id,number) DO NOTHING RETURNING id,number,status`,[roundId,number,req.auth.sub]);if(!ins.rowCount){await c.query('ROLLBACK');return res.status(409).json({error:'ይህ ቁጥር ቀድሞ ተይዟል።'})}await c.query('COMMIT');await maybeSendRoundAlert(roundId).catch(e=>console.error('PUSH_ALERT_ERROR:',e.message));res.json({ok:true,ticket:ins.rows[0],payment:{price:Number(r.ticket_price),info:PAYMENT_INFO},message:'ትኬቱ ተይዟል። ክፍያውን ይፈጽሙና የአድሚን ማረጋገጫ ይጠብቁ።'})}catch(e){await c.query('ROLLBACK').catch(()=>{});console.error(e);res.status(503).json({error:'ቁጥር መያዝ አልተቻለም።'})}finally{c.release()}});
-app.post('/api/admin/login',adminLimiter,(req,res)=>{const pin=String(req.body?.pin||'');const a=String(process.env.ADMIN_A_PIN||'');const b=String(process.env.ADMIN_B_PIN||'');let role=null;if(pin===ADMIN_PIN)role='master';else if(a&&pin===a)role='admin_a';else if(b&&pin===b)role='admin_b';if(!role)return res.status(401).json({error:'የአድሚን PIN ተሳስቷል።'});res.json({token:signAdmin(role),role})});
-app.get('/api/admin/announcements',requireAdminPermission('notifications.manage'),async(req,res)=>{try{const r=await pool.query(`SELECT id,message,active,priority,created_at,expires_at FROM announcements ORDER BY active DESC,priority DESC,created_at DESC LIMIT 200`);res.json({announcements:r.rows})}catch(e){console.error(e);res.status(503).json({error:'ማስታወቂያ ማምጣት አልተቻለም።'})}});
-app.post('/api/admin/announcements',requireAdminPermission('notifications.manage'),async(req,res)=>{const message=String(req.body?.message||'').trim(),duration=Number(req.body?.durationMinutes);const priority=Number.isFinite(Number(req.body?.priority))?Number(req.body.priority):0;if(!message||message.length>500)return res.status(400).json({error:'ማስታወቂያውን በ1-500 ፊደል ያስገቡ።'});if(!Number.isFinite(duration)||duration<1||duration>43200)return res.status(400).json({error:'የቆይታ ጊዜ ከ1 ደቂቃ እስከ 30 ቀን መሆን አለበት።'});try{const r=await pool.query(`INSERT INTO announcements(id,message,active,priority,expires_at) VALUES($1,$2,true,$3,NOW()+($4::text||' minutes')::interval) RETURNING *`,[crypto.randomUUID(),message,priority,duration]);res.json({ok:true,announcement:r.rows[0]})}catch(e){console.error(e);res.status(503).json({error:'ማስታወቂያ መለጠፍ አልተቻለም።'})}});
-app.patch('/api/admin/announcements/:id',requireAdminPermission('notifications.manage'),async(req,res)=>{try{const r=await pool.query(`UPDATE announcements SET active=COALESCE($2,active),priority=COALESCE($3,priority) WHERE id=$1 RETURNING *`,[req.params.id,typeof req.body?.active==='boolean'?req.body.active:null,Number.isFinite(Number(req.body?.priority))?Number(req.body.priority):null]);if(!r.rowCount)return res.status(404).json({error:'ማስታወቂያው አልተገኘም።'});res.json({ok:true,announcement:r.rows[0]})}catch(e){console.error(e);res.status(503).json({error:'ማስታወቂያውን ማስተካከል አልተቻለም።'})}});
-app.delete('/api/admin/announcements/:id',requireAdminPermission('notifications.manage'),async(req,res)=>{try{const r=await pool.query('DELETE FROM announcements WHERE id=$1 RETURNING id',[req.params.id]);if(!r.rowCount)return res.status(404).json({error:'ማስታወቂያው አልተገኘም።'});res.json({ok:true})}catch(e){console.error(e);res.status(503).json({error:'ማስታወቂያውን መሰረዝ አልተቻለም።'})}});
-app.get('/api/admin/push/status',requireAdminPermission('notifications.manage'),async(req,res)=>{try{const r=await pool.query('SELECT COUNT(*)::int c,COUNT(*) FILTER(WHERE user_id IS NOT NULL)::int registered FROM push_subscriptions WHERE active=true');res.json({enabled:PUSH_ENABLED,active:r.rows[0].c,registered:r.rows[0].registered})}catch(e){res.status(503).json({error:'Push status አልተገኘም።'})}});
-app.post('/api/admin/notifications/send',requireAdminPermission('notifications.manage'),async(req,res)=>{const title=String(req.body?.title||'🎱 8 BALL እጣ').trim().slice(0,100),message=String(req.body?.message||'').trim(),audience=String(req.body?.audience||'all'),roundId=req.body?.roundId?String(req.body.roundId):null,inAppMinutes=Math.max(0,Math.min(43200,Number(req.body?.inAppMinutes||1440)));if(!message||message.length>500)return res.status(400).json({error:'መልዕክቱ 1-500 ፊደል ይሁን።'});try{const result=await sendAudienceNotification({audience,roundId,title,message,inAppMinutes,data:{type:'admin_message'}});res.json({ok:true,...result})}catch(e){console.error(e);res.status(400).json({error:e.message||'ማስታወቂያ መላክ አልተሳካም።'})}});
-const PERM_KEYS=['rounds.create','rounds.start','rounds.close','rounds.view','tickets.setup','payments.manage','draw.manage','winners.view','reports.view','history.view','notifications.manage'];
-app.get('/api/admin/me',requireAdmin,async(req,res)=>{try{const role=adminRole(req);const permissions={};for(const k of PERM_KEYS)permissions[k]=await hasPermission(role,k);res.json({role,permissions,settings:role==='master'})}catch(e){console.error(e);res.status(503).json({error:'Permission መረጃ አልተገኘም።'})}});
-app.get('/api/admin/permissions',requireAdminRoles('master'),async(req,res)=>{try{const r=await pool.query('SELECT role,permission,enabled FROM admin_permissions ORDER BY role,permission');const out={admin_a:{},admin_b:{}};r.rows.forEach(x=>{if(out[x.role])out[x.role][x.permission]=x.enabled});for(const role of ['admin_a','admin_b'])for(const k of PERM_KEYS)if(out[role][k]===undefined)out[role][k]=DEFAULT_PERMS[role].includes(k);res.json(out)}catch(e){console.error(e);res.status(503).json({error:'Permission settings አልተገኙም።'})}});
-app.patch('/api/admin/permissions',requireAdminRoles('master'),async(req,res)=>{try{const role=String(req.body?.role||'');const permission=String(req.body?.permission||'');const enabled=req.body?.enabled;if(!['admin_a','admin_b'].includes(role)||!PERM_KEYS.includes(permission)||typeof enabled!=='boolean')return res.status(400).json({error:'የPermission መረጃ ትክክል አይደለም።'});await pool.query('INSERT INTO admin_permissions(role,permission,enabled,updated_at) VALUES($1,$2,$3,NOW()) ON CONFLICT(role,permission) DO UPDATE SET enabled=EXCLUDED.enabled,updated_at=NOW()',[role,permission,enabled]);res.json({ok:true,role,permission,enabled})}catch(e){console.error(e);res.status(503).json({error:'Permission መቀየር አልተሳካም።'})}});
-app.get('/api/admin/summary',requireAdmin,async(req,res)=>{try{const [r,u,p,s,w]=await Promise.all([pool.query('SELECT COUNT(*)::int c FROM rounds'),pool.query('SELECT COUNT(*)::int c FROM users'),pool.query("SELECT COUNT(*)::int c FROM tickets WHERE status='pending'"),pool.query("SELECT COALESCE(SUM(r.ticket_price),0) total FROM tickets t JOIN rounds r ON r.id=t.round_id WHERE t.status='paid'"),pool.query('SELECT COUNT(*)::int c FROM winners')]);res.json({rounds:r.rows[0].c,users:u.rows[0].c,pending:p.rows[0].c,sales:s.rows[0].total,winners:w.rows[0].c})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-app.get('/api/admin/rounds',requireAdminPermission('rounds.view'),async(req,res)=>{try{const r=await pool.query(`SELECT r.*,COUNT(t.id)::int AS ticket_count,COUNT(t.id) FILTER(WHERE t.status='paid')::int AS paid_count,COUNT(t.id) FILTER(WHERE t.status='pending')::int AS pending_count,COALESCE(SUM(CASE WHEN t.status='paid' THEN r.ticket_price ELSE 0 END),0) AS sales FROM rounds r LEFT JOIN tickets t ON t.round_id=r.id GROUP BY r.id ORDER BY r.draw_date DESC,r.round_no DESC`);res.json({rounds:r.rows})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-app.post('/api/admin/rounds',requireAdminPermission('rounds.create'),async(req,res)=>{const drawDate=String(req.body?.drawDate||'').trim(),roundNo=int(req.body?.roundNo),ticketPrice=Number(req.body?.ticketPrice),maxNumbers=int(req.body?.maxNumbers);if(!/^\d{4}-\d{2}-\d{2}$/.test(drawDate)||!Number.isInteger(roundNo)||roundNo<1||!Number.isFinite(ticketPrice)||ticketPrice<=0||!Number.isInteger(maxNumbers)||maxNumbers<1||maxNumbers>1000000)return res.status(400).json({error:'የዙር ቀን፣ ቁጥር ብዛት እና ዋጋ ትክክል ያስገቡ።'});const prizes=Array.isArray(req.body?.prizes)?req.body.prizes.map(Number).filter(Number.isFinite):[];if(prizes.length<3||prizes.some(x=>x<0))return res.status(400).json({error:'ቢያንስ 3 የእጣ ሽልማቶችን ያስገቡ።'});try{const r=await pool.query(`INSERT INTO rounds(id,draw_date,round_no,ticket_price,max_numbers,status,prizes,started_at) VALUES($1,$2,$3,$4,$5,'draft',$6::jsonb,NULL) RETURNING *`,[crypto.randomUUID(),drawDate,roundNo,ticketPrice,maxNumbers,JSON.stringify(prizes)]);res.json({ok:true,round:r.rows[0]})}catch(e){if(e.code==='23505')return res.status(409).json({error:'ይህ ቀንና ዙር ቁጥር አስቀድሞ አለ።'});console.error(e);res.status(503).json({error:'ዙር መፍጠር አልተቻለም።'})}});
-app.post('/api/admin/rounds/:id/start',requireAdminPermission('rounds.start'),async(req,res)=>{try{const r=await pool.query("UPDATE rounds SET status='open',started_at=COALESCE(started_at,NOW()) WHERE id=$1 AND status='draft' RETURNING *",[req.params.id]);if(!r.rowCount)return res.status(409).json({error:'ዙሩ መጀመር አልተቻለም።'});const rr=r.rows[0];await sendAudienceNotification({audience:'all',roundId:rr.id,title:'🎱 ዙር ጀምሯል!',message:`🎉 የ${rr.round_no}ኛ ዙር የ${Number(rr.ticket_price).toLocaleString()} ብር እጣ ጀምሯል! ዕድልዎን ይሞክሩ!`,inAppMinutes:1440}).catch(()=>{});res.json({ok:true,round:rr})}catch(e){console.error(e);res.status(503).json({error:'ዙሩን መጀመር አልተቻለም።'})}});
-app.post('/api/admin/rounds/:id/close',requireAdminPermission('rounds.close'),async(req,res)=>{try{const r=await pool.query("UPDATE rounds SET status='closed',closed_at=NOW() WHERE id=$1 AND status='open' RETURNING *",[req.params.id]);if(!r.rowCount)return res.status(409).json({error:'ዙሩ መዝጋት አልተቻለም።'});const rr=r.rows[0];await sendAudienceNotification({audience:'all',roundId:rr.id,title:'⏰ ዙር ተዘግቷል',message:`⏰ ዙር #${rr.round_no} ተዘግቷል።`,inAppMinutes:1440}).catch(()=>{});res.json({ok:true,round:rr})}catch(e){console.error(e);res.status(503).json({error:'ዙሩን መዝጋት አልተቻም።'})}});
-app.get('/api/admin/rounds/:id',requireAdminPermission('rounds.view'),async(req,res)=>{try{const r=await getRound(req.params.id);if(!r)return res.status(404).json({error:'ዙሩ አልተገኘም።'});const t=await pool.query(`SELECT t.id,t.number,t.status,t.created_at,t.paid_at,u.name,u.phone FROM tickets t JOIN users u ON u.id=t.user_id WHERE t.round_id=$1 ORDER BY t.created_at ASC`,[r.id]);const w=await pool.query('SELECT place,place_label,number,prize,user_id FROM winners WHERE round_id=$1 ORDER BY place',[r.id]);res.json({round:r,tickets:t.rows,winners:w.rows})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-app.post('/api/admin/confirm',requireAdminPermission('payments.manage'),async(req,res)=>{const roundId=String(req.body?.roundId||''),number=int(req.body?.number);try{const r=await pool.query("UPDATE tickets SET status='paid',paid_at=NOW() WHERE round_id=$1 AND number=$2 AND status='pending' RETURNING number,status,paid_at",[roundId,number]);if(!r.rowCount)return res.status(404).json({error:'Pending ትኬቱ አልተገኘም።'});const u=await pool.query('SELECT user_id FROM tickets WHERE round_id=$1 AND number=$2',[roundId,number]);if(u.rowCount)await sendUserNotification(u.rows[0].user_id,'🟢 ክፍያ ተረጋግጧል',`🟢 #${number} የዙሩ ክፍያ ተረጋግጧል።`,{type:'payment_confirmed',roundId}).catch(()=>{});res.json({ok:true,ticket:r.rows[0]})}catch(e){console.error(e);res.status(503).json({error:'ክፍያውን ማረጋገጥ አልተቻለም።'})}});
-app.post('/api/admin/release',requireAdminPermission('payments.manage'),async(req,res)=>{try{const r=await pool.query("DELETE FROM tickets WHERE round_id=$1 AND number=$2 AND status='pending' RETURNING number",[String(req.body?.roundId||''),int(req.body?.number)]);if(!r.rowCount)return res.status(404).json({error:'Pending ትኬቱ አልተገኘም።'});res.json({ok:true})}catch(e){console.error(e);res.status(503).json({error:'ትኬቱን መልቀቅ አልተቻለም።'})}});
-app.post('/api/admin/draw',requireAdminPermission('draw.manage'),async(req,res)=>{const id=String(req.body?.roundId||'');const c=await pool.connect();try{await c.query('BEGIN');await c.query('SELECT pg_advisory_xact_lock(hashtext($1))',[id]);const r=await getRound(id,c);if(!r){await c.query('ROLLBACK');return res.status(404).json({error:'ዙሩ አልተገኘም።'})}if(r.status!=='closed'){await c.query('ROLLBACK');return res.status(409).json({error:'እጣ ለማውጣት መጀመሪያ ዙሩን ዝጉ።'})}const ex=await c.query('SELECT 1 FROM winners WHERE round_id=$1 LIMIT 1',[id]);if(ex.rowCount){await c.query('ROLLBACK');return res.status(409).json({error:'የዚህ ዙር እጣ አስቀድሞ ወጥቷል።'})}const prizes=Array.isArray(r.prizes)?r.prizes:JSON.parse(r.prizes||'[]');const paid=await c.query('SELECT id,number,user_id FROM tickets WHERE round_id=$1 AND status=\'paid\' ORDER BY random() LIMIT $2',[id,prizes.length]);if(paid.rowCount<prizes.length){await c.query('ROLLBACK');return res.status(400).json({error:`ለ${prizes.length} እጣ በቂ Paid ትኬት የለም።`})}const labels=['1ኛ እጣ','2ኛ እጣ','3ኛ እጣ','4ኛ እጣ','5ኛ እጣ'];const out=[];for(let i=0;i<prizes.length;i++){const x=paid.rows[i],label=labels[i]||`${i+1}ኛ እጣ`;await c.query('INSERT INTO winners(id,round_id,place,place_label,number,ticket_id,user_id,prize) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',[crypto.randomUUID(),id,i+1,label,x.number,x.id,x.user_id,Number(prizes[i])]);out.push({place:i+1,place_label:label,number:x.number,prize:Number(prizes[i])})}await c.query("UPDATE rounds SET status='drawn',drawn_at=NOW() WHERE id=$1",[id]);await c.query('COMMIT');await sendAudienceNotification({audience:'all',roundId:id,title:'🏆 አሸናፊዎች ታውቀዋል!',message:`🏆 የዙር #${r.round_no} አሸናፊዎች ታውቀዋል!`,inAppMinutes:4320}).catch(()=>{});for(const w of out){const wx=paid.rows.find(x=>x.number===w.number);if(wx)await sendUserNotification(wx.user_id,'🏆 እንኳን ደስ አለዎት!',`🏆 በዙር #${r.round_no} ${w.place_label} አሸናፊ ሆነዋል። #${w.number} • ${Number(w.prize).toLocaleString()} ETB`,{type:'winner',roundId:id,number:w.number}).catch(()=>{})}res.json({ok:true,winners:out})}catch(e){await c.query('ROLLBACK').catch(()=>{});console.error(e);res.status(503).json({error:'እጣውን ማውጣት አልተቻለም።'})}finally{c.release()}});
-app.get('/api/admin/users',requireAdminPermission('payments.manage'),async(req,res)=>{try{const q=String(req.query?.q||'').trim();const r=await pool.query(`SELECT u.id,u.name,u.phone,u.created_at,COUNT(t.id)::int AS tickets,COUNT(t.id) FILTER(WHERE t.status='paid')::int AS paid_tickets FROM users u LEFT JOIN tickets t ON t.user_id=u.id WHERE ($1='' OR u.name ILIKE '%'||$1||'%' OR u.phone ILIKE '%'||$1||'%') GROUP BY u.id ORDER BY u.created_at DESC LIMIT 500`,[q]);res.json({users:r.rows})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-app.get('/api/admin/pending',requireAdminPermission('payments.manage'),async(req,res)=>{try{const r=await pool.query(`SELECT t.id,t.round_id,t.number,t.created_at,u.name,u.phone,r.round_no,r.ticket_price FROM tickets t JOIN users u ON u.id=t.user_id JOIN rounds r ON r.id=t.round_id WHERE t.status='pending' ORDER BY t.created_at ASC LIMIT 500`);res.json({tickets:r.rows})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-app.get('/api/admin/winners',requireAdminPermission('winners.view'),async(req,res)=>{try{const r=await pool.query(`SELECT w.place_label,w.number,w.prize,w.created_at,u.name,u.phone,r.round_no,r.draw_date FROM winners w JOIN users u ON u.id=w.user_id JOIN rounds r ON r.id=w.round_id ORDER BY w.created_at DESC LIMIT 500`);res.json({winners:r.rows})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-app.get('/api/admin/reports',requireAdminPermission('reports.view'),async(req,res)=>{try{const r=await pool.query(`SELECT r.id,r.draw_date,r.round_no,r.ticket_price,r.max_numbers,r.status,r.started_at,r.closed_at,r.drawn_at,COUNT(t.id)::int sold,COUNT(t.id) FILTER(WHERE t.status='paid')::int paid,COUNT(t.id) FILTER(WHERE t.status='pending')::int pending,COALESCE(SUM(CASE WHEN t.status='paid' THEN r.ticket_price ELSE 0 END),0) sales FROM rounds r LEFT JOIN tickets t ON t.round_id=r.id GROUP BY r.id ORDER BY r.draw_date DESC,r.round_no DESC`);res.json({reports:r.rows})}catch(e){console.error(e);res.status(503).json({error:'Database connection failed'})}});
-async function ensureCoreTables(){
-await pool.query(`CREATE TABLE IF NOT EXISTS users(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),name varchar(80) NOT NULL,phone varchar(10) NOT NULL UNIQUE,created_at timestamptz NOT NULL DEFAULT NOW())`);
-await pool.query(`CREATE TABLE IF NOT EXISTS rounds(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),draw_date date NOT NULL,round_no integer NOT NULL,ticket_price numeric(14,2) NOT NULL,max_numbers integer NOT NULL,status varchar(10) NOT NULL DEFAULT 'draft',prizes jsonb NOT NULL DEFAULT '[7000,1000,500]'::jsonb,started_at timestamptz,closed_at timestamptz,drawn_at timestamptz,created_at timestamptz NOT NULL DEFAULT NOW(),UNIQUE(draw_date,round_no))`);
-await pool.query(`CREATE TABLE IF NOT EXISTS tickets(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),round_id uuid NOT NULL REFERENCES rounds(id) ON DELETE CASCADE,number integer NOT NULL,user_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,status varchar(10) NOT NULL DEFAULT 'pending',created_at timestamptz NOT NULL DEFAULT NOW(),paid_at timestamptz,UNIQUE(round_id,number))`);
-await pool.query(`CREATE TABLE IF NOT EXISTS winners(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),round_id uuid NOT NULL REFERENCES rounds(id) ON DELETE CASCADE,place integer NOT NULL,place_label varchar(40) NOT NULL,number integer NOT NULL,ticket_id uuid NOT NULL REFERENCES tickets(id) ON DELETE RESTRICT,user_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,prize numeric(14,2) NOT NULL,created_at timestamptz NOT NULL DEFAULT NOW(),UNIQUE(round_id,place))`);
-await pool.query(`CREATE TABLE IF NOT EXISTS announcements(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),message text NOT NULL,active boolean NOT NULL DEFAULT true,priority integer NOT NULL DEFAULT 0,created_at timestamptz NOT NULL DEFAULT NOW(),expires_at timestamptz)`);
-await pool.query(`CREATE TABLE IF NOT EXISTS audit_logs(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),actor_role text NOT NULL,action text NOT NULL,entity_type text,entity_id uuid,details jsonb,created_at timestamptz NOT NULL DEFAULT NOW())`);
-}
-async function ensurePermissionTables(){await pool.query(`CREATE TABLE IF NOT EXISTS admin_permissions(role text NOT NULL,permission text NOT NULL,enabled boolean NOT NULL DEFAULT true,updated_at timestamptz NOT NULL DEFAULT NOW(),PRIMARY KEY(role,permission))`);for(const [role,perms] of Object.entries(DEFAULT_PERMS))if(role!=='master')for(const permission of PERM_KEYS)await pool.query('INSERT INTO admin_permissions(role,permission,enabled) VALUES($1,$2,$3) ON CONFLICT DO NOTHING',[role,permission,perms.includes(permission)])}
-async function ensurePushTables(){await pool.query(`CREATE TABLE IF NOT EXISTS push_subscriptions(id uuid PRIMARY KEY,user_id uuid NULL REFERENCES users(id) ON DELETE CASCADE,endpoint text UNIQUE NOT NULL,p256dh text NOT NULL,auth text NOT NULL,user_agent text,active boolean NOT NULL DEFAULT true,created_at timestamptz NOT NULL DEFAULT NOW(),updated_at timestamptz NOT NULL DEFAULT NOW())`);await pool.query(`CREATE TABLE IF NOT EXISTS notification_events(id uuid PRIMARY KEY,round_id uuid NOT NULL REFERENCES rounds(id) ON DELETE CASCADE,event_key text NOT NULL,created_at timestamptz NOT NULL DEFAULT NOW(),UNIQUE(round_id,event_key))`)}
-async function initDb(){await ensureCoreTables();await ensurePermissionTables();await ensurePushTables()}
-initDb().catch(e=>console.error('DB_INIT_ERROR:',e.message));
-app.use('/admin',express.static(path.join(__dirname,'admin')));app.use(express.static(path.join(__dirname,'public')));app.get('/admin/*',(req,res)=>res.sendFile(path.join(__dirname,'admin','index.html')));app.get('*',(req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
-app.listen(PORT,'0.0.0.0',()=>console.log(`Lottery V7 listening on ${PORT}`));
+app.use(express.json());
+app.use(cors());
+
+// መረጃዎች (In-Memory Data)
+let rounds = [
+  { id: 'round_1', round_no: 1, ticket_price: 200, max_numbers: 25, status: 'active', first_winner: '', second_winner: '', third_winner: '' }
+];
+let takenNumbers = {
+  'round_1': { 3: true, 7: true }
+};
+let specialNotice = {
+  active: true,
+  message: 'ከፍ ያለ ሽልማት የሚታወጅበት ልዩ እጣ ሊጀመር ነው። የዕድሉ ተሳታፊ ለመሆን ዛሬውኑ ይዘጋጁ!'
+};
+
+// የአድሚን ፈቃዶች መቆጣጠሪያ (Permissions Control)
+let adminPermissions = {
+  'Admin A': { canManageRounds: true, canDeclareWinners: true, canPostNotice: true },
+  'Admin B': { canManageRounds: true, canDeclareWinners: true, canPostNotice: true }
+};
+
+// ፐብሊክ ኤፒአይዎች
+app.get('/api/rounds/today', (req, res) => {
+  const activeRounds = rounds.filter(r => r.status === 'active' || r.status === 'pending');
+  res.json({ rounds: activeRounds.length > 0 ? activeRounds : rounds });
+});
+
+app.get('/api/rounds/:id/state', (req, res) => {
+  const roundId = req.params.id;
+  res.json({ taken: takenNumbers[roundId] || {} });
+});
+
+app.post('/api/users/register', (req, res) => {
+  const { name, phone } = req.body;
+  if (!name || !phone) return res.status(400).json({ error: 'ስም እና ስልክ ቁጥር ያስፈልጋል' });
+  res.json({ token: 'user-token-' + phone, name });
+});
+
+app.post('/api/take', (req, res) => {
+  const { roundId, number } = req.body;
+  if (!takenNumbers[roundId]) takenNumbers[roundId] = {};
+  if (takenNumbers[roundId][number]) return res.status(400).json({ error: 'ይህ ቁጥር უკვე ተይዟል!' });
+  takenNumbers[roundId][number] = true;
+  res.json({ ok: true });
+});
+
+app.get('/api/announcements/special', (req, res) => {
+  res.json(specialNotice);
+});
+
+// አድሚን ሎጊን (Admin A and Admin B)
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body;
+  if (password === 'adminA_secret_123') {
+    return res.json({ ok: true, token: 'admin-token-A', role: 'Admin A' });
+  } else if (password === 'adminB_secret_456') {
+    return res.json({ ok: true, token: 'admin-token-B', role: 'Admin B' });
+  }
+  res.status(401).json({ ok: false, error: 'የተሳሳተ የይለፍ ቃል!' });
+});
+
+const verifyAdmin = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  if (authHeader && (authHeader.includes('admin-token-A') || authHeader.includes('admin-token-B'))) {
+    next();
+  } else {
+    res.status(403).json({ ok: false, error: 'ፈቃድ የለዎትም!' });
+  }
+};
+
+app.get('/api/admin/rounds', verifyAdmin, (req, res) => {
+  res.json({ rounds });
+});
+
+app.post('/api/admin/rounds', verifyAdmin, (req, res) => {
+  const { round_no, ticket_price, max_numbers } = req.body;
+  const newRound = {
+    id: 'round_' + Date.now(),
+    round_no: parseInt(round_no) || (rounds.length + 1),
+    ticket_price: parseFloat(ticket_price) || 200,
+    max_numbers: parseInt(max_numbers) || 25,
+    status: 'pending',
+    first_winner: '',
+    second_winner: '',
+    third_winner: ''
+  };
+  rounds.unshift(newRound);
+  res.json({ ok: true, round: newRound });
+});
+
+app.post('/api/admin/rounds/start/:id', verifyAdmin, (req, res) => {
+  const roundId = req.params.id;
+  rounds.forEach(r => { if (r.id === roundId) r.status = 'active'; });
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/rounds/close/:id', verifyAdmin, (req, res) => {
+  const roundId = req.params.id;
+  rounds.forEach(r => { if (r.id === roundId) r.status = 'closed'; });
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/rounds/winners', verifyAdmin, (req, res) => {
+  const { roundId, firstWinner, secondWinner, thirdWinner } = req.body;
+  rounds.forEach(r => {
+    if (r.id === roundId) {
+      r.first_winner = firstWinner || '';
+      r.second_winner = secondWinner || '';
+      r.third_winner = thirdWinner || '';
+      r.status = 'completed';
+    }
+  });
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/announcements/special', verifyAdmin, (req, res) => {
+  const { active, message } = req.body;
+  specialNotice = { active, message };
+  res.json({ ok: true, specialNotice });
+});
+
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}`);
+});
