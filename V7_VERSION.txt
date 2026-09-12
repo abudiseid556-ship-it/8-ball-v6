@@ -1,7 +1,10 @@
-8 BALL LOTTERY V7 — UNIFIED SECURE MASTER
-User App: Premium mobile-first lottery UI
-Admin: Master + Admin A + Admin B with server-side permissions
-Admin A: rounds create/configure/open/close + payments/users/tickets
-Admin B: draw/winners/reports + round read access
-Master: full access
-Security: JWT role enforcement, rate limiting, Helmet, DB constraints, ticket uniqueness, draw transaction lock, audit logs
+8 BALL LOTTERY V7 — UNIFIED MASTER SECURE FINAL
+
+User App: premium mobile-first 8-ball lottery UI preserved.
+Admin: Master + Admin A + Admin B with server-side permissions.
+Admin A: round create/configure/open/close + payments/users/tickets.
+Admin B: draw/winners/reports + read-only round access.
+Master: full access.
+Security: JWT role enforcement, rate limiting, Helmet, DB constraints, ticket uniqueness, draw transaction lock, audit logs.
+Notifications: in-app + optional Web Push, isolated from the premium hero graphic.
+Deployment: repository ROOT contains server.js, package.json, public/, admin/.
