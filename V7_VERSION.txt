@@ -8,3 +8,6 @@ Master: full access.
 Security: JWT role enforcement, rate limiting, Helmet, DB constraints, ticket uniqueness, draw transaction lock, audit logs.
 Notifications: in-app + optional Web Push, isolated from the premium hero graphic.
 Deployment: repository ROOT contains server.js, package.json, public/, admin/.
+
+
+PUBLIC-ADMIN SYNC FIX: public app initializes load() on page open and polls the shared API every 5 seconds so newly created/started Admin rounds appear without manual reload. Premium graphics unchanged.
