@@ -34,4 +34,10 @@ function closePayment(){$('paymentModal').classList.remove('show')}
 async function showNotices(){if(!token)return toast('መጀመሪያ ይመዝገቡ።');try{const r=await fetch('/api/me/notifications',{headers:{Authorization:'Bearer '+token}});const j=await r.json();alert((j.notifications||[]).map(x=>x.message).join('\n\n')||'አዲስ ማስታወቂያ የለም።')}catch(e){toast('ማስታወቂያ ማምጣት አልተቻለም።')}}
 </script><script>
 async function enablePush(){try{if(!('serviceWorker' in navigator)||!('PushManager' in window))return toast('ይህ መሣሪያ Push Notification አይደግፍም።');const k=await fetch('/api/push/public-key').then(r=>r.json());if(!k.enabled)return toast('Push አሁን በserver ላይ አልተዋቀረም።');if(Notification.permission!=='granted'){const p=await Notification.requestPermission();if(p!=='granted')return toast('የማስታወቂያ ፍቃድ አልተሰጠም።')}const reg=await navigator.serviceWorker.register('/sw.js');let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:base64ToUint8(k.publicKey)});const token=localStorage.getItem('lottery-token')||'';await fetch('/api/push/subscribe',{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify({subscription:sub})});document.getElementById('pushEnable')?.remove();toast('🔔 ማስታወቂያ ተከፍቷል።')}catch(e){console.error(e);toast('ማስታወቂያ ማብራት አልተቻለም።')}}function base64ToUint8(b){const pad='='.repeat((4-b.length%4)%4),raw=atob((b+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)))}
+</script><script>
+let publicSyncBusy=false;
+async function syncPublicNow(){if(publicSyncBusy)return;publicSyncBusy=true;try{await load()}finally{publicSyncBusy=false}}
+syncPublicNow();
+setInterval(()=>{if(!document.hidden)syncPublicNow()},5000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncPublicNow()});
 </script></body></html>
