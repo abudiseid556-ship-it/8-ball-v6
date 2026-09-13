@@ -34,9 +34,3 @@ For an existing production database, do not drop tables. Let the startup compati
 - Only the three configured prize positions are displayed/drawn.
 - Admin permissions remain server-enforced; Master can toggle Admin A/B permissions.
 - Existing User/Admin separation, ticket locking, payment pending/confirmed, histories, push/in-app notifications, and grouped user tickets are preserved.
-
-
-## V7 final additions
-- All user/admin displayed timestamps use Ethiopia timezone (Africa/Addis_Ababa).
-- Each round has configurable minimum paid players (`min_players`) and waiting period (`waiting_minutes`).
-- When the waiting period expires and paid players are below the configured minimum, the server automatically transitions the round from OPEN to CLOSED, then REFUND REQUIRED. No draw is allowed.

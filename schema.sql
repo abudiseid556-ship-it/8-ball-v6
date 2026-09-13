@@ -14,8 +14,6 @@ CREATE TABLE IF NOT EXISTS rounds (
   round_no INTEGER NOT NULL CHECK (round_no >= 1),
   ticket_price NUMERIC(14,2) NOT NULL CHECK (ticket_price > 0),
   max_numbers INTEGER NOT NULL CHECK (max_numbers >= 1 AND max_numbers <= 1000000),
-  min_players INTEGER NOT NULL DEFAULT 50 CHECK (min_players >= 1),
-  waiting_minutes INTEGER NOT NULL DEFAULT 60 CHECK (waiting_minutes >= 1),
   status VARCHAR(30) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','open','closed','draw','drawn','completed','refund_required','refunded')),
   prizes JSONB NOT NULL DEFAULT '[7000,1000,500]'::jsonb,
   started_at TIMESTAMPTZ,
