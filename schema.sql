@@ -14,7 +14,9 @@ CREATE TABLE IF NOT EXISTS rounds (
   round_no INTEGER NOT NULL CHECK (round_no >= 1),
   ticket_price NUMERIC(14,2) NOT NULL CHECK (ticket_price > 0),
   max_numbers INTEGER NOT NULL CHECK (max_numbers >= 1 AND max_numbers <= 1000000),
-  status VARCHAR(10) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','open','closed','drawn')),
+  min_players INTEGER NOT NULL DEFAULT 50 CHECK (min_players >= 1),
+  waiting_minutes INTEGER NOT NULL DEFAULT 60 CHECK (waiting_minutes >= 1),
+  status VARCHAR(30) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','open','closed','draw','drawn','completed','refund_required','refunded')),
   prizes JSONB NOT NULL DEFAULT '[7000,1000,500]'::jsonb,
   started_at TIMESTAMPTZ,
   closed_at TIMESTAMPTZ,
@@ -29,6 +31,7 @@ CREATE TABLE IF NOT EXISTS tickets (
   number INTEGER NOT NULL CHECK (number >= 1),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   status VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','paid')),
+  refund_status VARCHAR(20) CHECK (refund_status IN ('pending','completed') OR refund_status IS NULL),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   paid_at TIMESTAMPTZ,
   UNIQUE(round_id,number)
@@ -95,7 +98,7 @@ CREATE TABLE IF NOT EXISTS admin_permissions (
 
 INSERT INTO admin_permissions(role,permission,enabled) VALUES
 ('admin_a','rounds.create',true),('admin_a','rounds.start',true),('admin_a','rounds.close',true),
-('admin_a','rounds.view',true),('admin_a','tickets.setup',true),('admin_a','payments.manage',true),('admin_a','notifications.manage',true),
+('admin_a','rounds.view',true),('admin_a','tickets.setup',true),('admin_a','payments.manage',true),('admin_a','refund.manage',true),('admin_a','notifications.manage',true),
 ('admin_b','rounds.view',true),('admin_b','draw.manage',true),('admin_b','winners.view',true),('admin_b','reports.view',true),
 ('admin_b','history.view',true),('admin_b','notifications.manage',true)
 ON CONFLICT(role,permission) DO NOTHING;
@@ -113,3 +116,5 @@ CREATE INDEX IF NOT EXISTS audit_logs_created_idx ON audit_logs(created_at DESC)
 
 CREATE TABLE IF NOT EXISTS in_app_notifications(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),title text NOT NULL DEFAULT '🎱 8 BALL እጣ',message text NOT NULL,audience text NOT NULL DEFAULT 'all',round_id uuid,created_at timestamptz NOT NULL DEFAULT NOW(),expires_at timestamptz);
 CREATE INDEX IF NOT EXISTS idx_in_app_notifications_active ON in_app_notifications(expires_at,created_at DESC);
+
+CREATE TABLE IF NOT EXISTS user_notification_state(user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,last_read_at TIMESTAMPTZ NOT NULL DEFAULT 'epoch');

@@ -1,2 +1,8 @@
-8 BALL እጣ V7 — Stable consolidated build
-Advertisement + Notice separated; round ticket grouping; notification error hardening; announcements title compatibility.
+8 BALL እጣ — V7 FINAL RULES
+Build: 2026-09-13
+Browser Edition
+Ethiopian timezone: Africa/Addis_Ababa
+Configurable minimum paid players per round
+Configurable waiting period per round
+Automatic insufficient-participation closure: OPEN → CLOSED → REFUND REQUIRED
+Refund-required rounds cannot be drawn
